@@ -1,0 +1,21 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Sleek Minimalist Apex Runner Emblem Vector Logo -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,6 L38,28 L33,28 L24,14 L15,28 L10,28 Z" />
+    <path
+        android:fillColor="#F5F5F4"
+        android:pathData="M24,17 L34,33 L30,33 L24,23 L18,33 L14,33 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,34.5 C25.38,34.5 26.5,35.62 26.5,37 C26.5,38.38 25.38,39.5 24,39.5 C22.62,39.5 21.5,38.38 21.5,37 C21.5,35.62 22.62,34.5 24,34.5 Z" />
+    <path
+        android:strokeColor="#F5F5F4"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M14,42 L34,42" />
+</vector>

@@ -1,0 +1,35 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Group centered at (54, 54) inside safe circle (radius 36dp) -->
+    <group
+        android:pivotX="54"
+        android:pivotY="54">
+
+        <!-- Outer Dynamic Apex Chevron Peak (Crisp White #FFFFFF) -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M54,27 L71,55 L65.5,55 L54,36.5 L42.5,55 L37,55 Z" />
+
+        <!-- Inner Soaring Runner Chevron (Platinum #F5F5F4) -->
+        <path
+            android:fillColor="#F5F5F4"
+            android:pathData="M54,39.5 L66,61 L61.5,61 L54,48 L46.5,61 L42,61 Z" />
+
+        <!-- Forward-Propelling Runner Silhouette Emblem -->
+        <!-- Runner Head / Cadence Beacon Dot (Crisp White #FFFFFF) -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M54,63 C55.66,63 57,64.34 57,66 C57,67.66 55.66,69 54,69 C52.34,69 51,67.66 51,66 C51,64.34 52.34,63 54,63 Z" />
+
+        <!-- Ground Horizon Baseline Rule (Platinum #F5F5F4) -->
+        <path
+            android:strokeColor="#F5F5F4"
+            android:strokeWidth="1.6"
+            android:strokeLineCap="round"
+            android:pathData="M38,76 L70,76" />
+    </group>
+</vector>
