@@ -47,14 +47,13 @@ data class ApexColorScheme(
 }
 
 val DarkApexColorScheme = ApexColorScheme(
-    canvasBackground = Color(0xFF080B10), // True Black OLED canvas
-    surface = Color(0xFF0F141C),          // Main card & cockpit surface
-    surfaceElevated = Color(0xFF161D28),  // Action buttons & elevated cards
-    surfaceHigh = Color(0xFF1E2736),      // Active states & pill containers
-    glassCard = Color(0xE00F141C),        // Glassmorphic header (88% opacity)
-
-    borderSubtle = Color(0xFF1E2736),
-    borderActive = Color(0xFF2D3A4F),
+    canvasBackground = Color(0xFF06080C), // Pure Deep OLED Obsidian Canvas
+    surface = Color(0xFF0C1017),          // Cockpit surface & primary card
+    surfaceElevated = Color(0xFF131923),  // Elevated tactical card & action controls
+    surfaceHigh = Color(0xFF1A2230),      // Active state pill & selected indicator
+    glassCard = Color(0xF20C1017),        // Glassmorphic header overlay
+    borderSubtle = Color(0xFF1B2433),     // Machined precision hairline border
+    borderActive = Color(0xFF2A384F),     // Active / Focused border
     borderGlowCyan = Color(0x4D00F5D4),
     borderGlowLime = Color(0x4D00FF87),
     borderGlowAmber = Color(0x4DF59E0B),

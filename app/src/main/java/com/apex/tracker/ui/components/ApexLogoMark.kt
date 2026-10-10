@@ -54,7 +54,7 @@ fun ApexLogoMark(
     size: Dp = 28.dp,
     showBadge: Boolean = true,
     primaryColor: Color = Color(0xFFFFFFFF),
-    accentColor: Color = Color(0xFFF5F5F4)
+    accentColor: Color = Color(0xFF00F5D4)
 ) {
     if (showBadge) {
         val cornerRadius = size * 0.26f
@@ -63,8 +63,8 @@ fun ApexLogoMark(
             modifier = modifier
                 .size(size)
                 .clip(shape)
-                .background(Color(0xFF0C0A09))
-                .border(1.dp, Color(0xFF262626), shape),
+                .background(Color(0xFF0C1017))
+                .border(1.dp, Color(0xFF1B2433), shape),
             contentAlignment = Alignment.Center
         ) {
             Canvas(modifier = Modifier.size(size * 0.70f)) {

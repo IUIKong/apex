@@ -43,19 +43,19 @@ object WorkoutShareHelper {
         val bitmap = Bitmap.createBitmap(CARD_WIDTH, CARD_HEIGHT, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        // 1. Warm Luxury Parchment / Beige Canvas Background with gentle vertical gradient
+        // 1. Pure OLED Obsidian Canvas Background with subtle dark vertical gradient
         val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             shader = LinearGradient(
                 0f, 0f, 0f, CARD_HEIGHT.toFloat(),
-                0xFFFBFBF9.toInt(), 0xFFF5F4EE.toInt(),
+                0xFF06080C.toInt(), 0xFF0C1017.toInt(),
                 Shader.TileMode.CLAMP
             )
         }
         canvas.drawRect(0f, 0f, CARD_WIDTH.toFloat(), CARD_HEIGHT.toFloat(), bgPaint)
 
-        // 2. Subtle Athletic Grid Accent
+        // 2. Subtle Precision Architectural Grid Accent
         val gridPaint = Paint().apply {
-            color = 0x0D000000
+            color = 0x261B2433.toInt()
             strokeWidth = 1f
             style = Paint.Style.STROKE
         }
@@ -70,11 +70,11 @@ object WorkoutShareHelper {
             gy += 45f
         }
 
-        // 3. Top-Right Subtle Terracotta Warm Aura Accent
+        // 3. Top-Right Subtle Electric Cyan Ambient Aura Glow
         val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             shader = RadialGradient(
-                CARD_WIDTH - 80f, 120f, 420f,
-                0x18D9531E.toInt(), 0x00000000,
+                CARD_WIDTH - 80f, 120f, 440f,
+                0x2200F5D4.toInt(), 0x00000000,
                 Shader.TileMode.CLAMP
             )
         }
@@ -107,13 +107,13 @@ object WorkoutShareHelper {
 
         // Official Obsidian Black Logo Badge matching ApexLogoMark
         val badgeBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFF0C0A09.toInt() // Deep Obsidian Black
+            color = 0xFF0C1017.toInt() // Deep Cockpit Obsidian
             style = Paint.Style.FILL
         }
         canvas.drawRoundRect(badgeRect, 18f, 18f, badgeBgPaint)
 
         val badgeBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFF262626.toInt() // Subtle Dark Border
+            color = 0xFF1B2433.toInt() // Hairline Titanium Border
             strokeWidth = 2f
             style = Paint.Style.STROKE
         }
@@ -134,7 +134,7 @@ object WorkoutShareHelper {
             close()
         }
         val outerPeakPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFFFFFFF.toInt() // Crisp Pure White
+            color = 0xFFFFFFFF.toInt() // Crisp Pure Titanium White
             style = Paint.Style.FILL
         }
         canvas.drawPath(outerPeakPath, outerPeakPaint)
@@ -149,7 +149,7 @@ object WorkoutShareHelper {
             close()
         }
         val innerPeakPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFF5F5F4.toInt() // Crisp Platinum / White
+            color = 0xFF00F5D4.toInt() // Athletic Electric Cyan
             style = Paint.Style.FILL
         }
         canvas.drawPath(innerPeakPath, innerPeakPaint)
@@ -157,7 +157,7 @@ object WorkoutShareHelper {
         // Brand Wordmark "APEX"
         val wordmarkX = badgeRect.right + 20f
         val wordmarkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFF1C1917.toInt()
+            color = 0xFFF8FAFC.toInt() // Titanium White
             textSize = 34f
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
             letterSpacing = 0.12f
@@ -169,7 +169,7 @@ object WorkoutShareHelper {
         val pillX = wordmarkX + wordmarkWidth + 18f
         val activityName = summary.activityType.uppercase(Locale.US)
         val pillTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFD9531E.toInt()
+            color = 0xFF00F5D4.toInt() // Electric Cyan
             textSize = 14f
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
             letterSpacing = 0.08f
@@ -178,11 +178,11 @@ object WorkoutShareHelper {
         val pillRect = RectF(pillX, badgeTop + 10f, pillX + pillTextWidth + 24f, badgeTop + 40f)
 
         val pillBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFF0EDE6.toInt()
+            color = 0xFF131923.toInt() // Elevated Dark Surface
             style = Paint.Style.FILL
         }
         val pillBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFDDD8CE.toInt()
+            color = 0xFF1B2433.toInt() // Subtle Border
             strokeWidth = 1.5f
             style = Paint.Style.STROKE
         }
@@ -197,7 +197,7 @@ object WorkoutShareHelper {
             SimpleDateFormat("EEEE, MMM d, yyyy • h:mm a", Locale.US).format(Date())
         }
         val datePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFF78716C.toInt()
+            color = 0xFF94A3B8.toInt() // Steel Slate
             textSize = 18f
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
         }
@@ -205,15 +205,15 @@ object WorkoutShareHelper {
     }
 
     private fun drawRouteMapPanel(canvas: Canvas, mapRect: RectF, summary: WorkoutSummaryUiState) {
-        // Map Panel Container (Pure Crisp White Sheet)
+        // Map Panel Container (Cockpit Obsidian Sheet)
         val mapBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFFFFFFF.toInt()
+            color = 0xFF0C1017.toInt()
             style = Paint.Style.FILL
         }
         canvas.drawRoundRect(mapRect, 24f, 24f, mapBgPaint)
 
         val mapBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFE7E4DF.toInt()
+            color = 0xFF1B2433.toInt()
             strokeWidth = 2f
             style = Paint.Style.STROKE
         }
@@ -224,7 +224,7 @@ object WorkoutShareHelper {
         canvas.clipRect(mapRect)
 
         val mapGridPaint = Paint().apply {
-            color = 0xFFF4F2EC.toInt()
+            color = 0x261B2433.toInt()
             strokeWidth = 1f
             style = Paint.Style.STROKE
         }
@@ -241,13 +241,13 @@ object WorkoutShareHelper {
 
         // Header Label inside Map
         val mapTitleDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFD9531E.toInt()
+            color = 0xFF00F5D4.toInt() // Electric Cyan
             style = Paint.Style.FILL
         }
         canvas.drawCircle(mapRect.left + 28f, mapRect.top + 32f, 4f, mapTitleDotPaint)
 
         val mapTitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFD9531E.toInt()
+            color = 0xFF00F5D4.toInt() // Electric Cyan
             textSize = 15f
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
             letterSpacing = 0.08f
@@ -256,12 +256,12 @@ object WorkoutShareHelper {
 
         // Legend: START & FINISH Markers
         val legendPaintStart = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFF2D6A4F.toInt()
+            color = 0xFF00FF87.toInt() // Electric Lime
             textSize = 14f
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
         }
         val legendPaintFinish = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFC2410C.toInt()
+            color = 0xFFFF3B56.toInt() // Electric Coral/Crimson
             textSize = 14f
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
         }
@@ -316,9 +316,9 @@ object WorkoutShareHelper {
                 }
             }
 
-            // Layer 1: Ambient Terracotta Glow Halo
+            // Layer 1: Ambient Electric Cyan Glow Halo
             val glowRoutePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = 0x24D9531E.toInt()
+                color = 0x2600F5D4.toInt()
                 strokeWidth = 14f
                 style = Paint.Style.STROKE
                 strokeCap = Paint.Cap.ROUND
@@ -326,9 +326,9 @@ object WorkoutShareHelper {
             }
             canvas.drawPath(routePath, glowRoutePaint)
 
-            // Layer 2: Warm Terracotta Underlay Halo
+            // Layer 2: Medium Cyan Underlay Halo
             val underlayRoutePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = 0x50D9531E.toInt()
+                color = 0x5000F5D4.toInt()
                 strokeWidth = 8f
                 style = Paint.Style.STROKE
                 strokeCap = Paint.Cap.ROUND
@@ -336,23 +336,23 @@ object WorkoutShareHelper {
             }
             canvas.drawPath(routePath, underlayRoutePaint)
 
-            // Layer 3: Vibrant Runner Terracotta Route Line
+            // Layer 3: Vibrant Glowing Electric Cyan Core Line
             val coreRoutePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = 0xFFD9531E.toInt()
-                strokeWidth = 5f
+                color = 0xFF00F5D4.toInt()
+                strokeWidth = 4.5f
                 style = Paint.Style.STROKE
                 strokeCap = Paint.Cap.ROUND
                 strokeJoin = Paint.Join.ROUND
             }
             canvas.drawPath(routePath, coreRoutePaint)
 
-            // Start Pin (Forest Sage Beacon)
+            // Start Pin (Electric Lime Beacon)
             val startHaloPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = 0x382D6A4F.toInt()
+                color = 0x3800FF87.toInt()
                 style = Paint.Style.FILL
             }
             val startDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = 0xFF2D6A4F.toInt()
+                color = 0xFF00FF87.toInt()
                 style = Paint.Style.FILL
             }
             val whiteCenterPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -363,13 +363,13 @@ object WorkoutShareHelper {
             canvas.drawCircle(startX, startY, 8f, startDotPaint)
             canvas.drawCircle(startX, startY, 3.5f, whiteCenterPaint)
 
-            // Finish Pin (Brick Rust Beacon)
+            // Finish Pin (Electric Crimson Beacon)
             val finishHaloPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = 0x38C2410C.toInt()
+                color = 0x38FF3B56.toInt()
                 style = Paint.Style.FILL
             }
             val finishDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = 0xFFC2410C.toInt()
+                color = 0xFFFF3B56.toInt()
                 style = Paint.Style.FILL
             }
             canvas.drawCircle(finishX, finishY, 14f, finishHaloPaint)
@@ -380,11 +380,11 @@ object WorkoutShareHelper {
             val centerX = mapRect.centerX()
             val centerY = mapRect.centerY()
             val singleBeaconHalo = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = 0x382D6A4F.toInt()
+                color = 0x3800FF87.toInt()
                 style = Paint.Style.FILL
             }
             val singleBeaconDot = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = 0xFF2D6A4F.toInt()
+                color = 0xFF00FF87.toInt()
                 style = Paint.Style.FILL
             }
             canvas.drawCircle(centerX, centerY, 18f, singleBeaconHalo)
@@ -392,7 +392,7 @@ object WorkoutShareHelper {
         } else {
             // Indoor / Zero GPS Points Empty State
             val emptyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = 0xFF78716C.toInt()
+                color = 0xFF64748B.toInt()
                 textSize = 16f
                 typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
                 textAlign = Paint.Align.CENTER
@@ -419,7 +419,7 @@ object WorkoutShareHelper {
         } else 0.0
         val avgSpeedStr = String.format(Locale.US, "%.1f", avgSpeedKmh)
 
-        // Row 1, Col 1: Total Distance
+        // Row 1, Col 1: Total Distance (Electric Cyan accent)
         val card1Rect = RectF(margin, gridTop, margin + cardWidth, gridTop + cardHeight)
         drawMetricCard(
             canvas = canvas,
@@ -428,10 +428,10 @@ object WorkoutShareHelper {
             value = distKm,
             unit = "KM",
             subtext = "Accepted trajectory",
-            accentColor = 0xFFD9531E.toInt()
+            accentColor = 0xFF00F5D4.toInt()
         )
 
-        // Row 1, Col 2: Moving Time
+        // Row 1, Col 2: Moving Time (Electric Lime accent)
         val card2Rect = RectF(margin + cardWidth + cardGap, gridTop, margin + contentWidth, gridTop + cardHeight)
         drawMetricCard(
             canvas = canvas,
@@ -440,10 +440,10 @@ object WorkoutShareHelper {
             value = movingTime,
             unit = "",
             subtext = "Elapsed: $elapsedTime",
-            accentColor = 0xFF2D6A4F.toInt()
+            accentColor = 0xFF00FF87.toInt()
         )
 
-        // Row 2, Col 1: Average Pace
+        // Row 2, Col 1: Average Pace (Electric Cyan accent)
         val row2Top = gridTop + cardHeight + cardGap
         val card3Rect = RectF(margin, row2Top, margin + cardWidth, row2Top + cardHeight)
         drawMetricCard(
@@ -453,10 +453,10 @@ object WorkoutShareHelper {
             value = avgPace,
             unit = "/KM",
             subtext = "Moving pace",
-            accentColor = 0xFFD9531E.toInt()
+            accentColor = 0xFF00F5D4.toInt()
         )
 
-        // Row 2, Col 2: Average Speed
+        // Row 2, Col 2: Average Speed (Electric Lime accent)
         val card4Rect = RectF(margin + cardWidth + cardGap, row2Top, margin + contentWidth, row2Top + cardHeight)
         drawMetricCard(
             canvas = canvas,
@@ -465,7 +465,7 @@ object WorkoutShareHelper {
             value = avgSpeedStr,
             unit = "KM/H",
             subtext = "GPS telemetry",
-            accentColor = 0xFF2D6A4F.toInt()
+            accentColor = 0xFF00FF87.toInt()
         )
     }
 
@@ -478,16 +478,16 @@ object WorkoutShareHelper {
         subtext: String,
         accentColor: Int
     ) {
-        // Card Background (Pure Crisp White Sheet)
+        // Card Background (Cockpit Obsidian Sheet)
         val cardBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFFFFFFF.toInt()
+            color = 0xFF0C1017.toInt()
             style = Paint.Style.FILL
         }
         canvas.drawRoundRect(rect, 22f, 22f, cardBgPaint)
 
-        // Card Border
+        // Card Border (Hairline Titanium Border)
         val cardBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFE7E4DF.toInt()
+            color = 0xFF1B2433.toInt()
             strokeWidth = 2f
             style = Paint.Style.STROKE
         }
@@ -505,16 +505,16 @@ object WorkoutShareHelper {
 
         // Metric Label
         val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFF78716C.toInt()
+            color = 0xFF94A3B8.toInt() // Steel Slate
             textSize = 17f
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
             letterSpacing = 0.08f
         }
         canvas.drawText(label, rect.left + 24f, rect.top + 46f, labelPaint)
 
-        // Main Numerical Value (Deep Warm Espresso Ink)
+        // Main Numerical Value (Titanium White)
         val valuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFF1C1917.toInt()
+            color = 0xFFF8FAFC.toInt()
             textSize = 66f
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
         }
@@ -535,7 +535,7 @@ object WorkoutShareHelper {
 
         // Subtext / Context
         val subtextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFF8C857B.toInt()
+            color = 0xFF64748B.toInt()
             textSize = 15.5f
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
         }
@@ -545,7 +545,7 @@ object WorkoutShareHelper {
     private fun drawFooter(canvas: Canvas, margin: Float, contentWidth: Float, summary: WorkoutSummaryUiState) {
         val dividerY = 1216f
         val dividerPaint = Paint().apply {
-            color = 0xFFE7E4DF.toInt()
+            color = 0xFF1B2433.toInt()
             strokeWidth = 1.5f
             style = Paint.Style.STROKE
         }
@@ -553,7 +553,7 @@ object WorkoutShareHelper {
 
         // Footer Branding: Minimal, clean, and elegant
         val footerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFF78716C.toInt()
+            color = 0xFF94A3B8.toInt()
             textSize = 18f
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
             textAlign = Paint.Align.CENTER

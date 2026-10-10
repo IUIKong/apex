@@ -15,12 +15,12 @@ class ThemeToggleTest {
     fun testDarkApexColorSchemeTokens() {
         val dark = DarkApexColorScheme
 
-        assertThat(dark.canvasBackground).isEqualTo(Color(0xFF080B10))
-        assertThat(dark.surface).isEqualTo(Color(0xFF0F141C))
-        assertThat(dark.surfaceElevated).isEqualTo(Color(0xFF161D28))
-        assertThat(dark.surfaceHigh).isEqualTo(Color(0xFF1E2736))
-        assertThat(dark.borderSubtle).isEqualTo(Color(0xFF1E2736))
-        assertThat(dark.borderActive).isEqualTo(Color(0xFF2D3A4F))
+        assertThat(dark.canvasBackground).isEqualTo(Color(0xFF06080C))
+        assertThat(dark.surface).isEqualTo(Color(0xFF0C1017))
+        assertThat(dark.surfaceElevated).isEqualTo(Color(0xFF131923))
+        assertThat(dark.surfaceHigh).isEqualTo(Color(0xFF1A2230))
+        assertThat(dark.borderSubtle).isEqualTo(Color(0xFF1B2433))
+        assertThat(dark.borderActive).isEqualTo(Color(0xFF2A384F))
         assertThat(dark.electricCyan).isEqualTo(Color(0xFF00F5D4))
         assertThat(dark.electricLime).isEqualTo(Color(0xFF00FF87))
         assertThat(dark.laserAmber).isEqualTo(Color(0xFFF59E0B))
