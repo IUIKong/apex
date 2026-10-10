@@ -114,7 +114,8 @@ class VerticalHysteresisFilter(
             fusedAltitude = alpha * fusedAltitude + (1.0 - alpha) * gnssAltitudeMeters
         } else {
             // Complementary filter fusion with slow anchor
-            val alpha = gnssAnchorTauSeconds / (gnssAnchorTauSeconds + dtSeconds)
+            val denom = gnssAnchorTauSeconds + dtSeconds
+            val alpha = if (denom > 1e-6) (gnssAnchorTauSeconds / denom).coerceIn(0.0, 1.0) else 0.5
             fusedAltitude = alpha * fusedAltitude + (1.0 - alpha) * gnssAltitudeMeters
         }
 

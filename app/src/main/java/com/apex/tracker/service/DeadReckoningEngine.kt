@@ -70,7 +70,6 @@ class DeadReckoningEngine(
     private var stepCount: Int = 0
     private var lastReportedStepCount: Int = 0
     private var lastStepTimestampMs: Long = 0L
-    private var lastAccelMagnitude: Float = 9.81f
     private var accelRising: Boolean = false
 
     var currentPhase: DeadReckoningPhase = DeadReckoningPhase.NORMAL_GNSS
@@ -137,7 +136,6 @@ class DeadReckoningEngine(
         } else if (gravityRemoved < ACCEL_STEP_THRESHOLD * 0.5f) {
             accelRising = false
         }
-        lastAccelMagnitude = magnitude
         return detectedStep
     }
 

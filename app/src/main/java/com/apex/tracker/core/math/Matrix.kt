@@ -81,10 +81,18 @@ class Matrix(val rows: Int, val cols: Int, val data: DoubleArray = DoubleArray(r
         if (det.isNaN() || det.isInfinite() || abs(det) < 1e-15) return null
         val invDet = 1.0 / det
         if (invDet.isNaN() || invDet.isInfinite()) return null
-        return Matrix(2, 2, doubleArrayOf(
-            d * invDet, -b * invDet,
-            -c * invDet, a * invDet
-        ))
+        val m00 = d * invDet
+        val m01 = -b * invDet
+        val m10 = -c * invDet
+        val m11 = a * invDet
+        if (m00.isNaN() || m00.isInfinite() ||
+            m01.isNaN() || m01.isInfinite() ||
+            m10.isNaN() || m10.isInfinite() ||
+            m11.isNaN() || m11.isInfinite()
+        ) {
+            return null
+        }
+        return Matrix(2, 2, doubleArrayOf(m00, m01, m10, m11))
     }
 
     /**

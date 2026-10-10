@@ -403,12 +403,13 @@ class EkfStateEstimator : StateEstimator {
         val dispSpeed = dFiltered / dt
         val rawSpeed = dRaw / dt
         val baseSpeed = min(dispSpeed, if (dRaw > 0.0) rawSpeed else dispSpeed)
-        val isGpsDopplerStationary = (lastGpsSpeedMps != null && lastGpsSpeedMps!! < 0.45f && (lastGpsSpeedAccuracyMps ?: 1f) <= 1.5f)
+        val gpsSpeed = lastGpsSpeedMps
+        val isGpsDopplerStationary = (gpsSpeed != null && gpsSpeed < 0.45f && (lastGpsSpeedAccuracyMps ?: 1f) <= 1.5f)
         val isGpsLowDisplacement = (baseSpeed < 0.45 && rawSpeed < 0.50)
         val isGpsStationary = isGpsDopplerStationary || isGpsLowDisplacement
 
         val effectiveSpeed = if (isGpsStationary) {
-            if (lastGpsSpeedMps != null && lastGpsSpeedMps!! < 0.45f) min(baseSpeed, lastGpsSpeedMps!!.toDouble()) else 0.0
+            if (gpsSpeed != null && gpsSpeed < 0.45f) min(baseSpeed, gpsSpeed.toDouble()) else 0.0
         } else {
             baseSpeed
         }

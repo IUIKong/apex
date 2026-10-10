@@ -32,32 +32,35 @@ fun GlanceablePaceCard(
     paceDeltaSec: Double,
     modifier: Modifier = Modifier
 ) {
+    val colors = ApexTheme.colors
+    val typography = ApexTheme.typography
+
     val cardShape = remember { RoundedCornerShape(ApexDimens.RadiusCardGiant) }
     val pillShape = remember { RoundedCornerShape(ApexDimens.RadiusPillFull) }
 
-    val formattedPace = UiFormatters.formatPace(currentPaceSecPerKm)
-    val deltaDisplay = UiFormatters.formatPaceDelta(paceDeltaSec)
+    val formattedPace = remember(currentPaceSecPerKm) { UiFormatters.formatPace(currentPaceSecPerKm) }
+    val deltaDisplay = remember(paceDeltaSec) { UiFormatters.formatPaceDelta(paceDeltaSec) }
 
     val deltaColor = when (deltaDisplay.category) {
-        DeltaCategory.AHEAD -> ApexTheme.colors.electricLime
-        DeltaCategory.BEHIND -> ApexTheme.colors.laserAmber
-        DeltaCategory.EVEN -> ApexTheme.colors.slateSubtle
+        DeltaCategory.AHEAD -> colors.electricLime
+        DeltaCategory.BEHIND -> colors.laserAmber
+        DeltaCategory.EVEN -> colors.slateSubtle
     }
 
     val deltaBg = when (deltaDisplay.category) {
-        DeltaCategory.AHEAD -> ApexTheme.colors.electricLimeDim
-        DeltaCategory.BEHIND -> ApexTheme.colors.laserAmberDim
-        DeltaCategory.EVEN -> ApexTheme.colors.surfaceHigh
+        DeltaCategory.AHEAD -> colors.electricLimeDim
+        DeltaCategory.BEHIND -> colors.laserAmberDim
+        DeltaCategory.EVEN -> colors.surfaceHigh
     }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .clip(cardShape)
-            .background(ApexTheme.colors.surfaceElevated)
+            .background(colors.surfaceElevated)
             .border(
                 width = 1.dp,
-                color = ApexTheme.colors.borderSubtle,
+                color = colors.borderSubtle,
                 shape = cardShape
             )
             .padding(horizontal = 16.dp, vertical = 14.dp)
@@ -76,12 +79,12 @@ fun GlanceablePaceCard(
                         modifier = Modifier
                             .width(3.dp)
                             .height(12.dp)
-                            .background(ApexTheme.colors.electricCyan)
+                            .background(colors.electricCyan)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "PRIMARY TELEMETRY • CURRENT PACE",
-                        style = ApexTheme.typography.LabelUppercase
+                        style = typography.LabelUppercase
                     )
                 }
 
@@ -95,7 +98,7 @@ fun GlanceablePaceCard(
                 ) {
                     Text(
                         text = deltaDisplay.formattedText,
-                        style = ApexTheme.typography.TelemetryMicro.copy(
+                        style = typography.TelemetryMicro.copy(
                             color = deltaColor,
                             fontWeight = FontWeight.Bold
                         )
@@ -113,14 +116,14 @@ fun GlanceablePaceCard(
             ) {
                 AnimatedNumeralTicker(
                     text = formattedPace,
-                    style = ApexTheme.typography.MetricGiant
+                    style = typography.MetricGiant
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "/km",
-                    style = ApexTheme.typography.LabelUppercase.copy(
+                    style = typography.LabelUppercase.copy(
                         fontSize = 16.sp,
-                        color = ApexTheme.colors.slateSubtle
+                        color = colors.slateSubtle
                     ),
                     modifier = Modifier.padding(bottom = 12.dp)
                 )

@@ -16,7 +16,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
-import kotlinx.coroutines.delay
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -48,6 +47,7 @@ import com.apex.tracker.ui.components.MapProjectionMath
 import com.apex.tracker.ui.state.TrackPointDto
 import com.apex.tracker.ui.theme.ApexDimens
 import com.apex.tracker.ui.theme.ApexTheme
+import kotlinx.coroutines.delay
 
 /**
  * Plain holder for route projection caches across Canvas redraw passes.

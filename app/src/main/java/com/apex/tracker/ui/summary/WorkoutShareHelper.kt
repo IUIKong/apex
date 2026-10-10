@@ -584,7 +584,13 @@ object WorkoutShareHelper {
      */
     fun getShareMessage(summary: WorkoutSummaryUiState): String {
         val formattedDistance = "${UiFormatters.formatDistanceKm(summary.totalDistanceMeters)} km"
-        return "Just finished a $formattedDistance run with Apex! 🏃‍♂️💨"
+        val sport = when (summary.activityType.uppercase(Locale.US)) {
+            "CYCLING" -> "ride 🚴‍♂️💨"
+            "WALKING" -> "walk 🚶‍♂️💨"
+            "HIKING" -> "hike 🥾💨"
+            else -> "run 🏃‍♂️💨"
+        }
+        return "Just finished a $formattedDistance $sport with Apex!"
     }
 
     /**

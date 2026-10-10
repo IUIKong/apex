@@ -16,10 +16,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -37,7 +33,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -47,7 +42,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
@@ -205,8 +199,7 @@ fun MainAppContent(
     viewModel: ApexTrackerViewModel,
     onOpenLocationSettings: () -> Unit = {}
 ) {
-    // 2 Tabs: Left = 0 (Logbook), Right = 1 (RECORD)
-    // Default to RECORD tab
+    // 3 Tabs: 0 = Logbook, 1 = RECORD (Default), 2 = STATS
     var selectedTab by remember { mutableIntStateOf(1) }
     var viewingSummary by remember { mutableStateOf(false) }
     var viewingSettings by remember { mutableStateOf(false) }
@@ -493,12 +486,13 @@ private fun RecordVectorIcon(
 }
 
 /**
- * 2-Tab Consumer Bottom Navigation Bar:
+ * 3-Tab Consumer Bottom Navigation Bar:
  * - Standard Material navigation bar height with WindowInsets.navigationBars (bottom only)
  * - Generous 56dp+ touch targets across the entire height of the bar
- * - 50/50 proportional weight distribution preventing any squishing on all screen sizes
- * - Left: Logbook (Clean Swiss vector icon, label, active indicator dot)
- * - Right: Record (Clean Swiss record beacon icon, label, active indicator dot)
+ * - Proportional weight distribution across all screen sizes
+ * - Tab 0: Logbook (Clean Swiss vector icon, label)
+ * - Tab 1: Record (Clean Swiss record beacon icon, label)
+ * - Tab 2: Stats (Minimalist analytics vector icon, label)
  */
 @Composable
 fun ApexBottomNavigationBar(

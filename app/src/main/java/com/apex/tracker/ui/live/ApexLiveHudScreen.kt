@@ -2,7 +2,6 @@ package com.apex.tracker.ui.live
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -48,9 +47,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import kotlinx.coroutines.delay
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -61,14 +60,14 @@ import com.apex.tracker.ui.components.CrashRecoveryBanner
 import com.apex.tracker.ui.components.SlideToLockGuard
 import com.apex.tracker.ui.components.TacticalControlsBar
 import com.apex.tracker.ui.components.tactilePress
+import com.apex.tracker.ui.sound.ApexAudioFeedback
 import com.apex.tracker.ui.state.DeltaCategory
 import com.apex.tracker.ui.state.LiveHudUiState
 import com.apex.tracker.ui.state.UiFormatters
-import androidx.compose.ui.platform.LocalView
-import com.apex.tracker.ui.sound.ApexAudioFeedback
 import com.apex.tracker.ui.theme.ApexDimens
 import com.apex.tracker.ui.theme.ApexTheme
 import java.util.Locale
+import kotlinx.coroutines.delay
 
 /**
  * Editorial Workout Recording HUD Screen.

@@ -95,7 +95,8 @@ class PaceEngine(
             smoothedVelocityMps = safeWindowVelocity
             hasInitializedEma = true
         } else {
-            val alpha = 1.0 - exp(-safeDt / emaTauSec)
+            val safeTau = if (emaTauSec <= 1e-6 || emaTauSec.isNaN() || emaTauSec.isInfinite()) 1.5 else emaTauSec
+            val alpha = (1.0 - exp(-safeDt / safeTau)).coerceIn(0.0, 1.0)
             smoothedVelocityMps = alpha * safeWindowVelocity + (1.0 - alpha) * smoothedVelocityMps
         }
 
@@ -128,7 +129,7 @@ class PaceEngine(
      * Uses rolling average updated on 1-second moving intervals for responsive live telemetry.
      */
     fun currentPaceSecPerKm(isAutoPaused: Boolean = false): Double {
-        if (isAutoPaused || smoothedVelocityMps < minSpeedClampMps || smoothedVelocityMps.isNaN() || smoothedVelocityMps.isInfinite()) {
+        if (isAutoPaused || smoothedVelocityMps <= 0.0 || smoothedVelocityMps < minSpeedClampMps || smoothedVelocityMps.isNaN() || smoothedVelocityMps.isInfinite()) {
             return Double.NaN
         }
         return if (!displayedPaceSecPerKm.isNaN()) displayedPaceSecPerKm else (1000.0 / smoothedVelocityMps)

@@ -13,8 +13,8 @@ data class UpdateInfo(
 )
 
 sealed interface UpdateStatus {
-    object Idle : UpdateStatus
-    object Checking : UpdateStatus
+    data object Idle : UpdateStatus
+    data object Checking : UpdateStatus
     data class Available(val updateInfo: UpdateInfo) : UpdateStatus
     data class UpToDate(val currentVersion: String) : UpdateStatus
     data class Downloading(

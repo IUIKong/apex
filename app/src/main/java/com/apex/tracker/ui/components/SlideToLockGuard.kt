@@ -9,6 +9,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.Orientation
@@ -36,15 +37,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalView
-import com.apex.tracker.ui.sound.ApexAudioFeedback
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.apex.tracker.ui.sound.ApexAudioFeedback
 import com.apex.tracker.ui.theme.ApexDimens
 import com.apex.tracker.ui.theme.ApexTheme
 import kotlin.math.roundToInt
@@ -231,11 +240,11 @@ fun SlideToLockGuard(
 @Composable
 private fun AnimatedPadlockIcon(
     lockProgress: Float,
-    tint: androidx.compose.ui.graphics.Color,
-    cutoutColor: androidx.compose.ui.graphics.Color,
+    tint: Color,
+    cutoutColor: Color,
     modifier: Modifier = Modifier
 ) {
-    androidx.compose.foundation.Canvas(modifier = modifier) {
+    Canvas(modifier = modifier) {
         val w = size.width
         val h = size.height
 
@@ -244,13 +253,13 @@ private fun AnimatedPadlockIcon(
         val bodyHeight = h * 0.52f
         val bodyLeft = (w - bodyWidth) / 2f
         val bodyTop = h - bodyHeight - 1.5.dp.toPx()
-        val cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.2.dp.toPx())
+        val cornerRadius = CornerRadius(2.2.dp.toPx())
 
         // Draw Lock Body
         drawRoundRect(
             color = tint,
-            topLeft = androidx.compose.ui.geometry.Offset(bodyLeft, bodyTop),
-            size = androidx.compose.ui.geometry.Size(bodyWidth, bodyHeight),
+            topLeft = Offset(bodyLeft, bodyTop),
+            size = Size(bodyWidth, bodyHeight),
             cornerRadius = cornerRadius
         )
 
@@ -260,14 +269,14 @@ private fun AnimatedPadlockIcon(
         drawCircle(
             color = cutoutColor,
             radius = 1.3.dp.toPx(),
-            center = androidx.compose.ui.geometry.Offset(keyholeX, keyholeY)
+            center = Offset(keyholeX, keyholeY)
         )
         drawLine(
             color = cutoutColor,
-            start = androidx.compose.ui.geometry.Offset(keyholeX, keyholeY),
-            end = androidx.compose.ui.geometry.Offset(keyholeX, bodyTop + bodyHeight * 0.74f),
+            start = Offset(keyholeX, keyholeY),
+            end = Offset(keyholeX, bodyTop + bodyHeight * 0.74f),
             strokeWidth = 1.4.dp.toPx(),
-            cap = androidx.compose.ui.graphics.StrokeCap.Round
+            cap = StrokeCap.Round
         )
 
         // Shackle Geometry
@@ -284,16 +293,16 @@ private fun AnimatedPadlockIcon(
 
         rotate(
             degrees = -26f * openFraction,
-            pivot = androidx.compose.ui.geometry.Offset(shacklePivotX, shacklePivotY)
+            pivot = Offset(shacklePivotX, shacklePivotY)
         ) {
             translate(left = 0f, top = -2.5.dp.toPx() * openFraction) {
-                val shacklePath = androidx.compose.ui.graphics.Path().apply {
+                val shacklePath = Path().apply {
                     // Left leg anchored in lock body
                     moveTo(shackleLeft, bodyTop + 1.dp.toPx())
                     lineTo(shackleLeft, bodyTop - shackleHeight + shackleWidth / 2f)
                     // Top curved arch
                     arcTo(
-                        rect = androidx.compose.ui.geometry.Rect(
+                        rect = Rect(
                             shackleLeft,
                             bodyTop - shackleHeight,
                             shackleLeft + shackleWidth,
@@ -310,9 +319,9 @@ private fun AnimatedPadlockIcon(
                 drawPath(
                     path = shacklePath,
                     color = tint,
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(
+                    style = Stroke(
                         width = strokeWidthPx,
-                        cap = androidx.compose.ui.graphics.StrokeCap.Round
+                        cap = StrokeCap.Round
                     )
                 )
             }

@@ -25,7 +25,6 @@ import com.apex.tracker.ui.state.SplitDto
 import com.apex.tracker.ui.state.UiFormatters
 import com.apex.tracker.ui.theme.ApexDimens
 import com.apex.tracker.ui.theme.ApexTheme
-import kotlin.math.roundToInt
 
 @Composable
 fun SplitsTable(

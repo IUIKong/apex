@@ -29,8 +29,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,16 +43,17 @@ fun GnssSignalBars(
     activeBars: Int,
     modifier: Modifier = Modifier
 ) {
+    val colors = ApexTheme.colors
     val barShape = remember { RoundedCornerShape(1.dp) }
+    val barHeights = remember { listOf(4.dp, 7.dp, 10.dp, 13.dp) }
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.Bottom
     ) {
-        val barHeights = listOf(4.dp, 7.dp, 10.dp, 13.dp)
         for (i in 0 until 4) {
             val isActive = i < activeBars
-            val color = if (isActive) ApexTheme.colors.electricLime else ApexTheme.colors.borderSubtle
+            val color = if (isActive) colors.electricLime else colors.borderSubtle
             Box(
                 modifier = Modifier
                     .width(3.dp)
@@ -77,6 +78,9 @@ fun TelemetryStatusBar(
     onBatteryProfileChanged: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val colors = ApexTheme.colors
+    val typography = ApexTheme.typography
+
     val activeBars = when {
         satelliteCount == 0 -> 0
         horizontalAccuracyMeters in 0.01f..5.0f && satelliteCount >= 8 -> 4
@@ -84,6 +88,8 @@ fun TelemetryStatusBar(
         horizontalAccuracyMeters in 0.01f..25.0f && satelliteCount >= 3 -> 2
         else -> 1
     }
+
+    val isMoving = motionState.uppercase(Locale.US) == "MOVING"
 
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
@@ -97,11 +103,11 @@ fun TelemetryStatusBar(
     )
 
     val (motionColor, motionText) = when (motionState.uppercase(Locale.US)) {
-        "MOVING" -> Pair(ApexTheme.colors.electricLime, "MOVING")
-        "STOPPED" -> Pair(ApexTheme.colors.punchyCrimson, "STOPPED")
-        "PAUSED" -> Pair(ApexTheme.colors.laserAmber, "PAUSED")
-        "INITIALIZING" -> Pair(ApexTheme.colors.laserAmber, "ACQUIRING")
-        else -> Pair(ApexTheme.colors.slateMuted, "READY")
+        "MOVING" -> Pair(colors.electricLime, "MOVING")
+        "STOPPED" -> Pair(colors.punchyCrimson, "STOPPED")
+        "PAUSED" -> Pair(colors.laserAmber, "PAUSED")
+        "INITIALIZING" -> Pair(colors.laserAmber, "ACQUIRING")
+        else -> Pair(colors.slateMuted, "READY")
     }
 
     var batteryMenuExpanded by remember { mutableStateOf(false) }
@@ -112,8 +118,8 @@ fun TelemetryStatusBar(
         modifier = modifier
             .fillMaxWidth()
             .clip(cardShape)
-            .background(ApexTheme.colors.surface)
-            .border(1.dp, ApexTheme.colors.borderSubtle, cardShape)
+            .background(colors.surface)
+            .border(1.dp, colors.borderSubtle, cardShape)
             .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
         Row(
@@ -129,9 +135,9 @@ fun TelemetryStatusBar(
                 GnssSignalBars(activeBars = activeBars)
                 Text(
                     text = "${satelliteCount}S",
-                    style = ApexTheme.typography.TelemetryMicro.copy(
+                    style = typography.TelemetryMicro.copy(
                         fontWeight = FontWeight.Bold,
-                        color = ApexTheme.colors.slateMuted,
+                        color = colors.slateMuted,
                         fontSize = 10.sp
                     )
                 )
@@ -139,18 +145,18 @@ fun TelemetryStatusBar(
                 val accText = if (horizontalAccuracyMeters > 0f) {
                     String.format(Locale.US, "±%.1fm", horizontalAccuracyMeters)
                 } else "SEARCHING"
-                val accColor = if (horizontalAccuracyMeters in 0.01f..10f) ApexTheme.colors.electricLime else ApexTheme.colors.laserAmber
+                val accColor = if (horizontalAccuracyMeters in 0.01f..10f) colors.electricLime else colors.laserAmber
 
                 Box(
                     modifier = Modifier
                         .clip(pillShape)
-                        .background(ApexTheme.colors.surfaceElevated)
-                        .border(1.dp, ApexTheme.colors.borderSubtle, pillShape)
+                        .background(colors.surfaceElevated)
+                        .border(1.dp, colors.borderSubtle, pillShape)
                         .padding(horizontal = 7.dp, vertical = 2.dp)
                 ) {
                     Text(
                         text = accText,
-                        style = ApexTheme.typography.TelemetryMicro.copy(
+                        style = typography.TelemetryMicro.copy(
                             color = accColor,
                             fontWeight = FontWeight.Bold,
                             fontSize = 9.sp
@@ -168,26 +174,24 @@ fun TelemetryStatusBar(
                 Row(
                     modifier = Modifier
                         .clip(pillShape)
-                        .background(ApexTheme.colors.surfaceElevated)
-                        .border(1.dp, ApexTheme.colors.borderSubtle, pillShape)
+                        .background(colors.surfaceElevated)
+                        .border(1.dp, colors.borderSubtle, pillShape)
                         .padding(horizontal = 8.dp, vertical = 3.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
                             .size(6.dp)
+                            .graphicsLayer {
+                                this.alpha = if (isMoving) pulseAlpha else 1f
+                            }
                             .clip(CircleShape)
                             .background(motionColor)
-                            .then(
-                                if (motionState.uppercase(Locale.US) == "MOVING") {
-                                    Modifier.alpha(pulseAlpha)
-                                } else Modifier
-                            )
                     )
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
                         text = motionText,
-                        style = ApexTheme.typography.TelemetryMicro.copy(
+                        style = typography.TelemetryMicro.copy(
                             color = motionColor,
                             fontWeight = FontWeight.Black,
                             fontSize = 9.5.sp,
@@ -207,8 +211,8 @@ fun TelemetryStatusBar(
                     Box(
                         modifier = Modifier
                             .clip(pillShape)
-                            .background(ApexTheme.colors.surfaceElevated)
-                            .border(1.dp, ApexTheme.colors.borderSubtle, pillShape)
+                            .background(colors.surfaceElevated)
+                            .border(1.dp, colors.borderSubtle, pillShape)
                             .clickable(enabled = onBatteryProfileChanged != null) {
                                 batteryMenuExpanded = true
                             }
@@ -216,9 +220,9 @@ fun TelemetryStatusBar(
                     ) {
                         Text(
                             text = profileLabel,
-                            style = ApexTheme.typography.TelemetryMicro.copy(
+                            style = typography.TelemetryMicro.copy(
                                 fontSize = 9.sp,
-                                color = ApexTheme.colors.slateMuted,
+                                color = colors.slateMuted,
                                 fontWeight = FontWeight.Bold
                             )
                         )

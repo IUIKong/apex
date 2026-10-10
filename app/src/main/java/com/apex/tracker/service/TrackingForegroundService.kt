@@ -10,6 +10,7 @@ import android.location.Location
 import android.os.Build
 import android.os.IBinder
 import android.os.SystemClock
+import androidx.core.content.ContextCompat
 import com.apex.tracker.core.fusion.EkfStateEstimator
 import com.apex.tracker.core.fusion.StateEstimator
 import com.apex.tracker.core.model.ActivityType
@@ -511,10 +512,10 @@ class TrackingForegroundService : Service() {
             isLocationDisabled = isGpsOff
         )
 
-        val hasFineLocation = androidx.core.content.ContextCompat.checkSelfPermission(
+        val hasFineLocation = ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
-        val hasCoarseLocation = androidx.core.content.ContextCompat.checkSelfPermission(
+        val hasCoarseLocation = ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
         val hasLocationPermission = hasFineLocation || hasCoarseLocation

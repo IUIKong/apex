@@ -32,10 +32,10 @@ Apex is an offline athletic activity tracker for Android designed for runners, c
 - **Training Heatmap Matrix**: Calendar grid visualization highlighting active workout days.
 - **Daily Workout Drilldown**: Detailed workout session cards for any selected day with direct tap-to-review navigation.
 
-### 5. Activity Logbook & Multi-Format Exporter
-- **Offline Logbook**: Chronological workout history stored locally on-device.
-- **Standardized File Exports**: Direct export to GPX 1.1, Garmin FIT binary, and GeoJSON (RFC 7946) formats for compatibility with external fitness platforms and GIS software.
-- **Workout Deletion & Management**: Manage and clean stored sessions directly within the app.
+### 5. Activity Logbook & Session Review
+- **Offline Logbook**: Chronological workout history stored locally on-device in Room SQLite database.
+- **Detailed Session Review**: Tap any completed activity to view its full circuit vector map, split pacing table, and elevation profile.
+- **Workout Deletion & Management**: Safely delete individual recorded sessions with confirmation prompts.
 
 ### 6. Athletic Workout Share Card
 - **High-Resolution Card Generation**: Generates a 4:5 aspect ratio summary card with custom route map graphics, date, distance, moving time, pace, and elevation gain.
@@ -108,7 +108,6 @@ flowchart TD
         STATS["Monthly Statistics Tab\n(Month Switcher, Daily Bar Chart, Heatmap)"]
         LOG["Logbook History\n(Session Browse & Deletion)"]
         SHARE["Athletic Share Card Generator\n(4:5 High-Res PNG via Intent)"]
-        EXP["Format Exporters\n(GPX 1.1, FIT Binary, GeoJSON)"]
     end
 
     GNSS --> GATE
@@ -135,7 +134,6 @@ flowchart TD
     ROOM --> LOG
     ROOM --> SUM
     SUM --> SHARE
-    ROOM --> EXP
 ```
 
 ---
@@ -152,7 +150,7 @@ flowchart TD
 | **State Estimation** | 4-state Extended Kalman Filter with zero-velocity updates |
 | **Checkpoint Interval** | 3.0 seconds |
 | **Database Engine** | SQLite via Android Jetpack Room |
-| **Export Standards** | GPX 1.1, Garmin FIT Binary, GeoJSON (RFC 7946) |
+| **Share Format** | 4:5 High-Resolution PNG with Route Vector Overlay |
 | **UI Framework** | Jetpack Compose (Material3 + Custom Obsidian Tokens) |
 
 ---

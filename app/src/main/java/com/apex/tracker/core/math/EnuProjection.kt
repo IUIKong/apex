@@ -103,11 +103,16 @@ object EnuProjection {
         val lambda = lambda0 + pe / (nPhi0 * safeCosPhi0)
 
         var degLon = Math.toDegrees(lambda)
-        while (degLon > 180.0) degLon -= 360.0
-        while (degLon <= -180.0) degLon += 360.0
+        if (degLon.isNaN() || degLon.isInfinite()) {
+            degLon = safeOriginLon
+        } else {
+            while (degLon > 180.0) degLon -= 360.0
+            while (degLon <= -180.0) degLon += 360.0
+        }
 
         val degLat = Math.toDegrees(phi).coerceIn(-90.0, 90.0)
-        return Pair(degLat, degLon)
+        val safeDegLat = if (degLat.isNaN() || degLat.isInfinite()) safeOriginLat else degLat
+        return Pair(safeDegLat, degLon)
     }
 
     /**

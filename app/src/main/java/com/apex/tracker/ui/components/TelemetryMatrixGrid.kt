@@ -34,14 +34,16 @@ fun MetricCard(
     subtext: String? = null,
     modifier: Modifier = Modifier
 ) {
+    val colors = ApexTheme.colors
+    val typography = ApexTheme.typography
     val cardShape = remember { RoundedCornerShape(ApexDimens.RadiusCardStandard) }
     Box(
         modifier = modifier
             .clip(cardShape)
-            .background(ApexTheme.colors.surface)
+            .background(colors.surface)
             .border(
                 width = 1.dp,
-                color = ApexTheme.colors.borderSubtle,
+                color = colors.borderSubtle,
                 shape = cardShape
             )
             .padding(horizontal = 10.dp, vertical = 8.dp)
@@ -49,7 +51,7 @@ fun MetricCard(
         Column {
             Text(
                 text = label,
-                style = ApexTheme.typography.LabelUppercase.copy(fontSize = 10.sp),
+                style = typography.LabelUppercase.copy(fontSize = 10.sp),
                 maxLines = 1,
                 softWrap = false
             )
@@ -59,15 +61,15 @@ fun MetricCard(
             ) {
                 AnimatedNumeralTicker(
                     text = value,
-                    style = ApexTheme.typography.MetricMedium
+                    style = typography.MetricMedium
                 )
                 if (unit != null) {
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = unit,
-                        style = ApexTheme.typography.LabelUppercase.copy(
+                        style = typography.LabelUppercase.copy(
                             fontSize = 10.sp,
-                            color = ApexTheme.colors.slateSubtle
+                            color = colors.slateSubtle
                         ),
                         modifier = Modifier.padding(bottom = 2.dp),
                         maxLines = 1,
@@ -79,7 +81,7 @@ fun MetricCard(
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = subtext,
-                    style = ApexTheme.typography.TelemetryMicro,
+                    style = typography.TelemetryMicro,
                     maxLines = 1,
                     softWrap = false
                 )
