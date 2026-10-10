@@ -92,104 +92,33 @@ fun ApexWorkoutsHistoryScreen(
     ) {
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Screen Header: Editorial Tracksmith Logbook with Brand Emblem & Update Action
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        // Sleek Minimal Top Bar: Settings Action Only (Logo and top elements removed)
+        if (onOpenSettings != null) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                ApexLogoMark(size = 32.dp)
-                Column {
-                    Text(
-                        text = "LOGBOOK",
-                        style = ApexTheme.typography.Headline.copy(
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Black,
-                            color = ApexTheme.colors.textPrimary,
-                            letterSpacing = 1.sp
-                        )
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(ApexTheme.colors.surfaceElevated)
+                        .border(1.dp, ApexTheme.colors.borderSubtle, CircleShape)
+                        .tactilePress(pressedScale = 0.90f) {
+                            ApexAudioFeedback.playClick(view)
+                            onOpenSettings()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Settings",
+                        tint = ApexTheme.colors.slateSubtle,
+                        modifier = Modifier.size(16.dp)
                     )
-                    Text(
-                        text = "${workouts.size} SESSIONS RECORDED",
-                        style = ApexTheme.typography.LabelMicro.copy(
-                            color = ApexTheme.colors.slateMuted,
-                            letterSpacing = 1.2.sp
-                        )
-                    )
-                }
-            }
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // In-app Update Pill
-                if (onCheckForUpdates != null) {
-                    val isUpdateAvailable = updateStatus is UpdateStatus.Available
-                    val pillBorder = if (isUpdateAvailable) ApexTheme.colors.electricCyan else ApexTheme.colors.borderSubtle
-                    val pillBg = if (isUpdateAvailable) ApexTheme.colors.surfaceHigh else ApexTheme.colors.surface
-
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(ApexDimens.RadiusPillFull))
-                            .background(pillBg)
-                            .border(1.dp, pillBorder, RoundedCornerShape(ApexDimens.RadiusPillFull))
-                            .tactilePress(pressedScale = 0.94f) {
-                                ApexAudioFeedback.playClick(view)
-                                onCheckForUpdates()
-                            }
-                            .padding(horizontal = 10.dp, vertical = 5.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            if (isUpdateAvailable) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(6.dp)
-                                        .clip(CircleShape)
-                                        .background(ApexTheme.colors.electricCyan)
-                                )
-                            }
-                            Text(
-                                text = if (isUpdateAvailable) "UPDATE AVAILABLE" else "CHECK UPDATES",
-                                style = ApexTheme.typography.LabelMicro.copy(
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Black,
-                                    color = if (isUpdateAvailable) ApexTheme.colors.electricCyan else ApexTheme.colors.slateSubtle,
-                                    letterSpacing = 0.8.sp
-                                )
-                            )
-                        }
-                    }
-                }
-
-                // Settings Gear Button
-                if (onOpenSettings != null) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(ApexTheme.colors.surfaceElevated)
-                            .border(1.dp, ApexTheme.colors.borderSubtle, CircleShape)
-                            .tactilePress(pressedScale = 0.90f) {
-                                ApexAudioFeedback.playClick(view)
-                                onOpenSettings()
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings",
-                            tint = ApexTheme.colors.slateSubtle,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
                 }
             }
         }

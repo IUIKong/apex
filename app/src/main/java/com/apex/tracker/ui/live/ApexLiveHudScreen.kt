@@ -347,25 +347,6 @@ private fun AtelierBrandHeader(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Sport Activity Chip
-            Box(
-                modifier = Modifier
-                    .clip(pillShape)
-                    .background(colors.surfaceElevated)
-                    .border(1.dp, colors.borderSubtle, pillShape)
-                    .padding(horizontal = 8.dp, vertical = 3.dp)
-            ) {
-                Text(
-                    text = uiState.activityType.uppercase(),
-                    style = typography.LabelMicro.copy(
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colors.slateSubtle,
-                        letterSpacing = 0.8.sp
-                    )
-                )
-            }
-
             // GNSS Status Pill
             val isGpsActive = uiState.isLocationServicesEnabled && uiState.isLocationPermissionGranted
             val hasGoodFix = isGpsActive && uiState.horizontalAccuracyMeters > 0f && uiState.horizontalAccuracyMeters < 35f

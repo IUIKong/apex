@@ -65,6 +65,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -86,6 +87,7 @@ import com.apex.tracker.ui.settings.ApexSettingsScreen
 import com.apex.tracker.ui.settings.AppSettings
 import com.apex.tracker.ui.sound.ApexAudioFeedback
 import com.apex.tracker.ui.splash.ApexSplashIntroScreen
+import com.apex.tracker.ui.stats.ApexMonthlyStatsScreen
 import com.apex.tracker.ui.summary.ApexWorkoutSummaryScreen
 import com.apex.tracker.ui.theme.ApexDimens
 import com.apex.tracker.ui.theme.ApexTheme
@@ -235,6 +237,11 @@ fun MainAppContent(
         selectedTab = 0
     }
 
+    // Intercept hardware Back button on secondary tabs (Logbook or Stats) to return to Record cockpit
+    BackHandler(enabled = selectedTab != 1 && !viewingSummary && !viewingSettings) {
+        selectedTab = 1
+    }
+
     val liveState by viewModel.liveHudState.collectAsStateWithLifecycle()
     val summaryState by viewModel.summaryState.collectAsStateWithLifecycle()
     val allWorkouts by viewModel.allWorkouts.collectAsStateWithLifecycle()
@@ -379,6 +386,15 @@ fun MainAppContent(
                                         onOpenLocationSettings = onOpenLocationSettings,
                                         onDismissLocationPrompt = { viewModel.dismissLocationPrompt() },
                                         onStartWorkoutForce = { viewModel.startWorkout(liveState.activityType, forceStart = true) },
+                                        onOpenSettings = { viewingSettings = true }
+                                    )
+
+                                    2 -> ApexMonthlyStatsScreen(
+                                        workouts = allWorkouts,
+                                        onWorkoutSelected = { workoutId ->
+                                            viewModel.loadWorkoutDetails(workoutId)
+                                            viewingSummary = true
+                                        },
                                         onOpenSettings = { viewingSettings = true }
                                     )
                                 }
@@ -588,7 +604,83 @@ fun ApexBottomNavigationBar(
                         )
                     }
                 }
+
+                // Tab 2: STATS (Monthly statistics & daily breakdown)
+                val isStatsSelected = selectedTabIndex == 2
+                val statsColor = if (isStatsSelected) colors.textPrimary else colors.slateMuted
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp)
+                        .clip(navPillShape)
+                        .background(if (isStatsSelected) colors.surfaceHigh else Color.Transparent)
+                        .tactilePress(pressedScale = 0.95f) {
+                            ApexAudioFeedback.playClick(view)
+                            onTabSelected(2)
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        StatsVectorIcon(color = if (isStatsSelected) colors.electricLime else statsColor)
+                        Text(
+                            text = "STATS",
+                            style = typography.LabelUppercase.copy(
+                                fontSize = 11.sp,
+                                fontWeight = if (isStatsSelected) FontWeight.Black else FontWeight.Bold,
+                                color = statsColor,
+                                letterSpacing = 1.sp
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
             }
         }
+    }
+}
+
+/**
+ * Minimalist Vector Icon for Monthly Statistics & Analytics Tab.
+ */
+@Composable
+private fun StatsVectorIcon(
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier.size(18.dp)) {
+        val w = size.width
+        val h = size.height
+
+        val barWidth = w * 0.22f
+        val gap = w * 0.12f
+
+        // Bar 1 (left): 45% height
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(0f, h * 0.55f),
+            size = Size(barWidth, h * 0.45f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(1.5f * density)
+        )
+
+        // Bar 2 (center): 90% height
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(barWidth + gap, h * 0.10f),
+            size = Size(barWidth, h * 0.90f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(1.5f * density)
+        )
+
+        // Bar 3 (right): 65% height
+        drawRoundRect(
+            color = color,
+            topLeft = Offset((barWidth + gap) * 2f, h * 0.35f),
+            size = Size(barWidth, h * 0.65f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(1.5f * density)
+        )
     }
 }
