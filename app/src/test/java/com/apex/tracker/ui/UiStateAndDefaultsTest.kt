@@ -17,7 +17,7 @@ class UiStateAndDefaultsTest {
         assertThat(state.isRecording).isFalse()
         assertThat(state.isPaused).isFalse()
         assertThat(state.isControlsLocked).isFalse()
-        assertThat(state.isDarkTheme).isTrue()
+        assertThat(state.isDarkTheme).isFalse()
         assertThat(state.motionState).isEqualTo("READY")
         assertThat(state.activityType).isEqualTo("RUNNING")
         assertThat(state.batteryProfile).isEqualTo("MAX_ACCURACY")

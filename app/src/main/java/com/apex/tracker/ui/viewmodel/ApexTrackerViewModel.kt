@@ -44,10 +44,10 @@ class ApexTrackerViewModel(application: Application) : AndroidViewModel(applicat
         trackPointDao = db.trackPointDao()
     )
 
-    private val _liveHudState = MutableStateFlow(LiveHudUiState(isDarkTheme = true))
+    private val _liveHudState = MutableStateFlow(LiveHudUiState(isDarkTheme = false))
     val liveHudState: StateFlow<LiveHudUiState> = _liveHudState.asStateFlow()
 
-    private val _isDarkTheme = MutableStateFlow(true)
+    private val _isDarkTheme = MutableStateFlow(false)
     val isDarkTheme: StateFlow<Boolean> = _isDarkTheme.asStateFlow()
 
     private val _summaryState = MutableStateFlow(WorkoutSummaryUiState())

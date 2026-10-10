@@ -58,6 +58,7 @@ import com.apex.tracker.ui.state.UiFormatters
 import com.apex.tracker.ui.state.WorkoutSummaryUiState
 import com.apex.tracker.ui.theme.ApexDimens
 import com.apex.tracker.ui.theme.ApexTheme
+import com.apex.tracker.ui.theme.DarkApexColorScheme
 import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.cos
@@ -213,7 +214,11 @@ fun ApexWorkoutSummaryScreen(
                             coroutineScope.launch {
                                 isSharing = true
                                 try {
-                                    WorkoutShareHelper.shareWorkoutSummary(context, summaryState)
+                                    WorkoutShareHelper.shareWorkoutSummary(
+                                        context = context,
+                                        summary = summaryState,
+                                        isDark = colors.canvasBackground == DarkApexColorScheme.canvasBackground
+                                    )
                                 } catch (e: Exception) {
                                     Toast.makeText(
                                         context,

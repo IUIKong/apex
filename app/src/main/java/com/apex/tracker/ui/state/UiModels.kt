@@ -30,7 +30,7 @@ data class LiveHudUiState(
     val isRecording: Boolean = false,
     val isPaused: Boolean = false,
     val isControlsLocked: Boolean = false,
-    val isDarkTheme: Boolean = true,
+    val isDarkTheme: Boolean = false,
     val motionState: String = "READY", // READY, MOVING, STOPPED, PAUSED, INITIALIZING
     val activityType: String = "RUNNING", // RUNNING, CYCLING, WALKING, HIKING
     val batteryProfile: String = "MAX_ACCURACY", // MAX_ACCURACY, BALANCED, ECO

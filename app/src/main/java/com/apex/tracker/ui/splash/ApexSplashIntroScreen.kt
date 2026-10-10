@@ -70,7 +70,7 @@ fun ApexSplashIntroScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF06080C))
+            .background(Color(0xFFFBFBF9))
             .pointerInput(Unit) {
                 detectTapGestures {
                     onFinish() // Tap anywhere to skip instantly
@@ -110,6 +110,7 @@ fun ApexSplashIntroScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer { alpha = contentAlpha.value }
+                .background(Color(0xFF06080C))
         ) {
             // 1. Organic, fluid, multi-octave digital pixel matrix across full screen
             PixelatedMovingGradientBackdrop(

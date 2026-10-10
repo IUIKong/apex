@@ -4,8 +4,8 @@
         <item name="android:windowBackground">@color/canvas_background</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
         <!-- Android 12+ SplashScreen overrides: seamless dark OLED start without icon flicker -->
         <item name="android:windowSplashScreenBackground">@color/canvas_background</item>
         <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
