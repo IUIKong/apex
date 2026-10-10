@@ -2,6 +2,9 @@
 
 Apex is an offline athletic activity tracker for Android designed for runners, cyclists, hikers, and walkers. It operates entirely on-device with zero account requirements, zero cloud dependencies, and zero background analytics.
 
+[![Download Latest APK](https://img.shields.io/badge/Download_APK-Apex.apk-0F0E0D?style=for-the-badge&logo=android&logoColor=22C55E)](https://github.com/IUIKong/apex/releases/latest/download/Apex.apk)
+[![Latest Release](https://img.shields.io/github/v/release/IUIKong/apex?color=0F0E0D&label=Release&style=for-the-badge)](https://github.com/IUIKong/apex/releases/latest)
+
 ![Apex App Preview](screenshots/preview.jpg)
 
 ---
