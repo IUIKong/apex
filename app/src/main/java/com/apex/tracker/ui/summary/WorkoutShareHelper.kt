@@ -202,39 +202,6 @@ object WorkoutShareHelper {
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
         }
         canvas.drawText(dateString, wordmarkX, badgeTop + 65f, datePaint)
-
-        // Top-Right Tactical Status Badge
-        val statusText = "OFFLINE GNSS FUSION"
-        val statusTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFF1C1917.toInt()
-            textSize = 13.5f
-            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-            letterSpacing = 0.06f
-        }
-        val statusTextWidth = statusTextPaint.measureText(statusText)
-        val statusPillWidth = statusTextWidth + 38f
-        val statusPillRight = CARD_WIDTH - margin
-        val statusPillRect = RectF(statusPillRight - statusPillWidth, badgeTop + 14f, statusPillRight, badgeTop + 46f)
-
-        val statusBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFF0EDE6.toInt()
-            style = Paint.Style.FILL
-        }
-        val statusBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFDDD8CE.toInt()
-            strokeWidth = 1.5f
-            style = Paint.Style.STROKE
-        }
-        canvas.drawRoundRect(statusPillRect, 16f, 16f, statusBgPaint)
-        canvas.drawRoundRect(statusPillRect, 16f, 16f, statusBorderPaint)
-
-        // Active Sage Green Status Dot
-        val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFF2D6A4F.toInt()
-            style = Paint.Style.FILL
-        }
-        canvas.drawCircle(statusPillRect.left + 14f, statusPillRect.centerY(), 4f, dotPaint)
-        canvas.drawText(statusText, statusPillRect.left + 24f, statusPillRect.centerY() + 5f, statusTextPaint)
     }
 
     private fun drawRouteMapPanel(canvas: Canvas, mapRect: RectF, summary: WorkoutSummaryUiState) {
@@ -302,7 +269,12 @@ object WorkoutShareHelper {
         canvas.drawText("● FINISH", mapRect.right - 85f, mapRect.bottom - 20f, legendPaintFinish)
 
         // Render Route Vector Trace
-        val points = summary.trackPoints
+        val points = summary.trackPoints.filter {
+            it.latitude != 0.0 && it.longitude != 0.0 &&
+                !it.latitude.isNaN() && !it.longitude.isNaN() &&
+                it.latitude in -90.0..90.0 && it.longitude in -180.0..180.0 &&
+                !it.isOutlier
+        }
         if (points.size >= 2) {
             val fit = MapProjectionMath.computeAutoFitBoundsForPoints(
                 trackPoints = points,

@@ -8,10 +8,10 @@ import kotlin.math.exp
  * and near-zero velocity clamping.
  */
 class PaceEngine(
-    val windowDurationSec: Double = 5.0,
-    val emaTauSec: Double = 2.0,
-    val minSpeedClampMps: Double = 0.25,
-    val paceUpdateIntervalSec: Double = 5.0
+    val windowDurationSec: Double = 3.0,
+    val emaTauSec: Double = 1.5,
+    val minSpeedClampMps: Double = 0.5,
+    val paceUpdateIntervalSec: Double = 1.0
 ) {
 
     private val distanceTimeWindow = ArrayDeque<TimeDistancePoint>()
@@ -99,8 +99,7 @@ class PaceEngine(
             smoothedVelocityMps = alpha * safeWindowVelocity + (1.0 - alpha) * smoothedVelocityMps
         }
 
-        // 5-second interval pace averaging: compute average pace over the 5-second window
-        // and update the displayed pace every 5 seconds of moving time.
+        // 1-second interval responsive pace updates
         val timeSincePaceUpdate = safeMovingTime - lastPaceUpdateTimeSec
         val candidatePace = if (smoothedVelocityMps >= minSpeedClampMps && !smoothedVelocityMps.isNaN() && !smoothedVelocityMps.isInfinite()) {
             1000.0 / smoothedVelocityMps
@@ -108,8 +107,11 @@ class PaceEngine(
             Double.NaN
         }
 
-        if (displayedPaceSecPerKm.isNaN()) {
-            if (!candidatePace.isNaN() && safeMovingTime >= 0.5) {
+        if (candidatePace.isNaN()) {
+            displayedPaceSecPerKm = Double.NaN
+            lastPaceUpdateTimeSec = safeMovingTime
+        } else if (displayedPaceSecPerKm.isNaN()) {
+            if (safeMovingTime >= 0.5) {
                 displayedPaceSecPerKm = candidatePace
                 lastPaceUpdateTimeSec = safeMovingTime
             }
@@ -123,7 +125,7 @@ class PaceEngine(
 
     /**
      * Current pace in seconds per kilometer. Returns Double.NaN if clamped.
-     * Uses 5-second rolling average updated on 5-second moving intervals to prevent constant jitter.
+     * Uses rolling average updated on 1-second moving intervals for responsive live telemetry.
      */
     fun currentPaceSecPerKm(isAutoPaused: Boolean = false): Double {
         if (isAutoPaused || smoothedVelocityMps < minSpeedClampMps || smoothedVelocityMps.isNaN() || smoothedVelocityMps.isInfinite()) {

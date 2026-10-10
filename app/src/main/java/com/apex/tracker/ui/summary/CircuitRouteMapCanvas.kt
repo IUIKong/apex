@@ -58,23 +58,33 @@ fun CircuitRouteMapCanvas(
     val colors = ApexTheme.colors
     val typography = ApexTheme.typography
 
+    val validPoints = remember(trackPoints) {
+        trackPoints.filter {
+            it.latitude != 0.0 && it.longitude != 0.0 &&
+                !it.latitude.isNaN() && !it.longitude.isNaN() &&
+                it.latitude in -90.0..90.0 && it.longitude in -180.0..180.0 &&
+                !it.isOutlier
+        }
+    }
+
     // Animated Circuit Route Trace Reveal
     val drawProgress = remember { Animatable(0f) }
-    LaunchedEffect(trackPoints.size) {
-        if (trackPoints.size > 1) {
-            drawProgress.snapTo(0.05f)
-            drawProgress.animateTo(1f, tween(950, easing = FastOutSlowInEasing))
+    LaunchedEffect(validPoints.size) {
+        if (validPoints.size > 1) {
+            drawProgress.snapTo(0.1f)
+            drawProgress.animateTo(1f, tween(850, easing = FastOutSlowInEasing))
         } else {
             drawProgress.snapTo(1f)
         }
     }
 
     val cache = remember { CircuitRenderCache() }
+    val mapPaddingPx = with(density) { 26.dp.toPx() }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(220.dp)
+            .height(230.dp)
             .clip(RoundedCornerShape(ApexDimens.RadiusCardStandard))
             .background(colors.canvasBackground)
             .border(1.dp, colors.borderSubtle, RoundedCornerShape(ApexDimens.RadiusCardStandard))
@@ -83,7 +93,7 @@ fun CircuitRouteMapCanvas(
             val width = size.width
             val height = size.height
 
-            // 1. Subtle 35dp Grid Lines
+            // 1. Subtle Grid Lines
             val gridColor = colors.mapGridLine
             var curX = 0f
             while (curX < width) {
@@ -96,34 +106,33 @@ fun CircuitRouteMapCanvas(
                 curY += gridStepPx
             }
 
-            if (trackPoints.isEmpty()) {
+            if (validPoints.isEmpty()) {
                 val center = Offset(width / 2f, height / 2f)
                 drawCircle(colors.borderActive.copy(alpha = 0.35f), radius = 3.dp.toPx(), center = center)
                 return@Canvas
             }
 
-            // 2. Precompute simplified screen projection only when dimensions or data change (ZERO allocations per frame)
-            if (width != cache.cachedWidth || height != cache.cachedHeight || trackPoints.size != cache.cachedPointsSize) {
+            // 2. Precompute simplified screen projection only when dimensions or data change
+            if (width != cache.cachedWidth || height != cache.cachedHeight || validPoints.size != cache.cachedPointsSize) {
                 cache.cachedWidth = width
                 cache.cachedHeight = height
-                cache.cachedPointsSize = trackPoints.size
+                cache.cachedPointsSize = validPoints.size
 
                 val fit = MapProjectionMath.computeAutoFitBoundsForPoints(
-                    trackPoints = trackPoints,
+                    trackPoints = validPoints,
                     canvasWidth = width,
                     canvasHeight = height,
-                    padding = 36f
+                    padding = mapPaddingPx
                 )
 
-                // Simplify points to screen threshold to prevent per-frame path overhead
                 val coords = MapProjectionMath.computeSimplifiedScreenCoords(
-                    trackPoints = trackPoints,
+                    trackPoints = validPoints,
                     centerLat = fit.centerLat,
                     centerLon = fit.centerLon,
                     scale = fit.scale,
                     canvasWidth = width,
                     canvasHeight = height,
-                    minDistancePx = 2.5f
+                    minDistancePx = 2.0f
                 )
                 cache.screenCoords = coords
 
@@ -140,7 +149,8 @@ fun CircuitRouteMapCanvas(
             if (totalPoints >= 1) {
                 // 3. Render animated circuit polyline up to current draw progress
                 if (totalPoints >= 2) {
-                    val maxIndex = (totalPoints * drawProgress.value).toInt().coerceIn(1, totalPoints)
+                    val progressVal = drawProgress.value
+                    val maxIndex = if (progressVal >= 0.98f) totalPoints else (totalPoints * progressVal).toInt().coerceIn(2, totalPoints)
                     cache.circuitPath.reset()
                     cache.circuitPath.moveTo(coords[0], coords[1])
                     for (index in 1 until maxIndex) {
@@ -150,31 +160,33 @@ fun CircuitRouteMapCanvas(
                     // Crisp white underlay halo lifting route cleanly from parchment
                     drawPath(
                         path = cache.circuitPath,
-                        color = Color.White.copy(alpha = 0.9f),
-                        style = Stroke(width = 5.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                        color = Color.White.copy(alpha = 0.95f),
+                        style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
                     )
 
                     // Core Terracotta route line
                     drawPath(
                         path = cache.circuitPath,
                         color = colors.mapRouteTrace,
-                        style = Stroke(width = 3.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                        style = Stroke(width = 3.8.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
                     )
                 }
 
                 // 4. Start Pin (Forest Sage)
                 val startPos = cache.startPos
-                drawCircle(colors.electricLime.copy(alpha = 0.2f), radius = 8.dp.toPx(), center = startPos)
-                drawCircle(colors.electricLime, radius = 4.5.dp.toPx(), center = startPos)
+                drawCircle(colors.electricLime.copy(alpha = 0.25f), radius = 9.dp.toPx(), center = startPos)
+                drawCircle(colors.electricLime, radius = 5.dp.toPx(), center = startPos)
                 drawCircle(Color.White, radius = 2.dp.toPx(), center = startPos)
 
-                // 5. Finish Pin (Brick Rust) - Revealed when trace nears completion (for routes with >1 point)
-                if (trackPoints.size > 1 && drawProgress.value >= 0.95f) {
-                    val finishScale = ((drawProgress.value - 0.95f) / 0.05f).coerceIn(0f, 1f)
-                    val finishPos = cache.finishPos
-                    drawCircle(colors.punchyCrimson.copy(alpha = 0.2f), radius = 8.dp.toPx() * finishScale, center = finishPos)
-                    drawCircle(colors.punchyCrimson, radius = 4.5.dp.toPx() * finishScale, center = finishPos)
-                    drawCircle(Color.White, radius = 2.dp.toPx() * finishScale, center = finishPos)
+                // 5. Finish Pin (Crimson)
+                if (validPoints.size > 1) {
+                    val finishScale = if (drawProgress.value >= 0.85f) ((drawProgress.value - 0.85f) / 0.15f).coerceIn(0.2f, 1f) else 0f
+                    if (finishScale > 0f) {
+                        val finishPos = cache.finishPos
+                        drawCircle(colors.punchyCrimson.copy(alpha = 0.25f), radius = 9.dp.toPx() * finishScale, center = finishPos)
+                        drawCircle(colors.punchyCrimson, radius = 5.dp.toPx() * finishScale, center = finishPos)
+                        drawCircle(Color.White, radius = 2.dp.toPx() * finishScale, center = finishPos)
+                    }
                 }
             }
         }

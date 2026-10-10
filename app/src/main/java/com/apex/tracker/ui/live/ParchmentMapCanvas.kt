@@ -212,14 +212,6 @@ fun ParchmentMapCanvas(
                 cache.cachedAutoFollow = isNavActive
                 cache.cachedShowRaw = showRawTrace
 
-                val fit = MapProjectionMath.computeAutoFitBoundsForPoints(
-                    trackPoints = trackPoints,
-                    canvasWidth = width,
-                    canvasHeight = height,
-                    padding = 52f,
-                    minSpanDegrees = 0.0012
-                )
-
                 val centerLat: Double
                 val centerLon: Double
                 val effectiveScale: Float
@@ -232,7 +224,14 @@ fun ParchmentMapCanvas(
                     val navBaseScale = (width / 0.0025f)
                     effectiveScale = navBaseScale * zoomFactor
                 } else {
-                    // Full route overview / Fit bounds mode
+                    // Full route overview / Fit bounds mode: computed only when not in auto-follow
+                    val fit = MapProjectionMath.computeAutoFitBoundsForPoints(
+                        trackPoints = trackPoints,
+                        canvasWidth = width,
+                        canvasHeight = height,
+                        padding = 52f,
+                        minSpanDegrees = 0.0012
+                    )
                     centerLat = fit.centerLat
                     centerLon = fit.centerLon
                     effectiveScale = fit.scale * zoomFactor
@@ -242,9 +241,12 @@ fun ParchmentMapCanvas(
                 cache.cachedCenterLon = centerLon
                 cache.cachedEffectiveScale = effectiveScale
 
-                // Start position screen coordinates (relative to pan=0)
+                // Start position screen coordinates (relative to pan=0, safely using first valid point)
+                val firstValidPt = trackPoints.firstOrNull {
+                    it.latitude != 0.0 && it.longitude != 0.0 && !it.latitude.isNaN() && !it.longitude.isNaN()
+                } ?: firstPt
                 cache.cachedStartPos = MapProjectionMath.projectToCanvas(
-                    lat = firstPt.latitude, lon = firstPt.longitude,
+                    lat = firstValidPt.latitude, lon = firstValidPt.longitude,
                     centerLat = centerLat, centerLon = centerLon,
                     scale = effectiveScale, canvasWidth = width, canvasHeight = height,
                     panOffsetX = 0f, panOffsetY = 0f
@@ -262,7 +264,7 @@ fun ParchmentMapCanvas(
                         canvasHeight = height,
                         panOffsetX = 0f,
                         panOffsetY = 0f,
-                        minDistancePx = 3f,
+                        minDistancePx = 3.5f,
                         useRawCoordinates = true
                     )
                 } else false
@@ -279,7 +281,7 @@ fun ParchmentMapCanvas(
                         canvasHeight = height,
                         panOffsetX = 0f,
                         panOffsetY = 0f,
-                        minDistancePx = 2.5f,
+                        minDistancePx = 3.0f,
                         useRawCoordinates = false
                     )
                 } else false

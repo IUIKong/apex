@@ -131,11 +131,30 @@ object MapProjectionMath {
         val usableWidth = max(canvasWidth - 2f * padding, 10f)
         val usableHeight = max(canvasHeight - 2f * padding, 10f)
 
-        if (trackPoints.isEmpty()) {
+        var validCount = 0
+        var firstValidIdx = -1
+        var anchorLon = 0.0
+
+        for (i in trackPoints.indices) {
+            val pt = trackPoints[i]
+            if (pt.latitude != 0.0 && pt.longitude != 0.0 &&
+                !pt.latitude.isNaN() && !pt.longitude.isNaN() &&
+                pt.latitude in -90.0..90.0 && pt.longitude in -180.0..180.0 &&
+                !pt.isOutlier
+            ) {
+                if (validCount == 0) {
+                    firstValidIdx = i
+                    anchorLon = pt.longitude
+                }
+                validCount++
+            }
+        }
+
+        if (validCount == 0) {
             return BoundingBoxFit(centerLat = 0.0, centerLon = 0.0, scale = 1000f)
         }
-        if (trackPoints.size == 1) {
-            val pt = trackPoints.first()
+        if (validCount == 1) {
+            val pt = trackPoints[firstValidIdx]
             val clampedLat = pt.latitude.coerceIn(-89.9, 89.9)
             val cosLat = max(0.01, cos(clampedLat * (PI / 180.0)))
             val scaleX = (usableWidth / (minSpanDegrees * cosLat)).toFloat()
@@ -145,22 +164,28 @@ object MapProjectionMath {
 
         var minLat = Double.MAX_VALUE
         var maxLat = -Double.MAX_VALUE
-
-        val anchorLon = trackPoints.first().longitude
         var minUnwrappedLon = 0.0
         var maxUnwrappedLon = 0.0
+        var isFirst = true
 
         for (i in trackPoints.indices) {
             val pt = trackPoints[i]
+            if (pt.latitude == 0.0 || pt.longitude == 0.0 ||
+                pt.latitude.isNaN() || pt.longitude.isNaN() ||
+                pt.latitude !in -90.0..90.0 || pt.longitude !in -180.0..180.0 ||
+                pt.isOutlier
+            ) continue
+
             val lat = pt.latitude
             val lon = pt.longitude
             if (lat < minLat) minLat = lat
             if (lat > maxLat) maxLat = lat
 
             val dLon = normalizeLongitudeDelta(lon - anchorLon)
-            if (i == 0) {
+            if (isFirst) {
                 minUnwrappedLon = dLon
                 maxUnwrappedLon = dLon
+                isFirst = false
             } else {
                 if (dLon < minUnwrappedLon) minUnwrappedLon = dLon
                 if (dLon > maxUnwrappedLon) maxUnwrappedLon = dLon
@@ -205,7 +230,36 @@ object MapProjectionMath {
         minDistancePx: Float = 2.5f,
         useRawCoordinates: Boolean = false
     ): FloatArray {
-        if (trackPoints.size < 2) return FloatArray(0)
+        val n = trackPoints.size
+        var firstValidIdx = -1
+        for (i in 0 until n) {
+            val pt = trackPoints[i]
+            val lat = if (useRawCoordinates) pt.rawLatitude else pt.latitude
+            val lon = if (useRawCoordinates) pt.rawLongitude else pt.longitude
+            if (lat != 0.0 && lon != 0.0 && !lat.isNaN() && !lon.isNaN() &&
+                lat in -90.0..90.0 && lon in -180.0..180.0 &&
+                (useRawCoordinates || !pt.isOutlier)
+            ) {
+                firstValidIdx = i
+                break
+            }
+        }
+        if (firstValidIdx == -1) return FloatArray(0)
+
+        var lastValidIdx = -1
+        for (i in n - 1 downTo firstValidIdx + 1) {
+            val pt = trackPoints[i]
+            val lat = if (useRawCoordinates) pt.rawLatitude else pt.latitude
+            val lon = if (useRawCoordinates) pt.rawLongitude else pt.longitude
+            if (lat != 0.0 && lon != 0.0 && !lat.isNaN() && !lon.isNaN() &&
+                lat in -90.0..90.0 && lon in -180.0..180.0 &&
+                (useRawCoordinates || !pt.isOutlier)
+            ) {
+                lastValidIdx = i
+                break
+            }
+        }
+        if (lastValidIdx == -1) return FloatArray(0)
 
         val clampedLat = centerLat.coerceIn(-89.9, 89.9)
         val latRad = clampedLat * (PI / 180.0)
@@ -214,11 +268,11 @@ object MapProjectionMath {
         val halfH = (canvasHeight / 2f) + panOffsetY
         val minDistSq = minDistancePx * minDistancePx
 
-        // Preallocate single buffer for max possible points: trackPoints.size * 2
-        val buffer = FloatArray(trackPoints.size * 2)
+        // Preallocate single buffer for max possible points: n * 2
+        val buffer = FloatArray(n * 2)
 
         // First point
-        val first = trackPoints.first()
+        val first = trackPoints[firstValidIdx]
         val fLat = if (useRawCoordinates) first.rawLatitude else first.latitude
         val fLon = if (useRawCoordinates) first.rawLongitude else first.longitude
         val dLon0 = normalizeLongitudeDelta(fLon - centerLon)
@@ -230,10 +284,15 @@ object MapProjectionMath {
         var lastY = buffer[1]
 
         // Intermediate points simplified by min distance threshold
-        for (i in 1 until trackPoints.size - 1) {
+        for (i in firstValidIdx + 1 until lastValidIdx) {
             val pt = trackPoints[i]
             val lat = if (useRawCoordinates) pt.rawLatitude else pt.latitude
             val lon = if (useRawCoordinates) pt.rawLongitude else pt.longitude
+            if (lat == 0.0 || lon == 0.0 || lat.isNaN() || lon.isNaN() ||
+                lat !in -90.0..90.0 || lon !in -180.0..180.0 ||
+                (!useRawCoordinates && pt.isOutlier)
+            ) continue
+
             val dLon = normalizeLongitudeDelta(lon - centerLon)
             val dLat = lat - clampedLat
             val x = (dLon * cosLat * scale).toFloat() + halfW
@@ -251,7 +310,7 @@ object MapProjectionMath {
         }
 
         // Final point always preserved
-        val last = trackPoints.last()
+        val last = trackPoints[lastValidIdx]
         val lLat = if (useRawCoordinates) last.rawLatitude else last.latitude
         val lLon = if (useRawCoordinates) last.rawLongitude else last.longitude
         val dLonN = normalizeLongitudeDelta(lLon - centerLon)
@@ -282,7 +341,36 @@ object MapProjectionMath {
         minDistancePx: Float = 2.5f,
         useRawCoordinates: Boolean = false
     ): Boolean {
-        if (trackPoints.size < 2) return false
+        val n = trackPoints.size
+        var firstValidIdx = -1
+        for (i in 0 until n) {
+            val pt = trackPoints[i]
+            val lat = if (useRawCoordinates) pt.rawLatitude else pt.latitude
+            val lon = if (useRawCoordinates) pt.rawLongitude else pt.longitude
+            if (lat != 0.0 && lon != 0.0 && !lat.isNaN() && !lon.isNaN() &&
+                lat in -90.0..90.0 && lon in -180.0..180.0 &&
+                (useRawCoordinates || !pt.isOutlier)
+            ) {
+                firstValidIdx = i
+                break
+            }
+        }
+        if (firstValidIdx == -1) return false
+
+        var lastValidIdx = -1
+        for (i in n - 1 downTo firstValidIdx + 1) {
+            val pt = trackPoints[i]
+            val lat = if (useRawCoordinates) pt.rawLatitude else pt.latitude
+            val lon = if (useRawCoordinates) pt.rawLongitude else pt.longitude
+            if (lat != 0.0 && lon != 0.0 && !lat.isNaN() && !lon.isNaN() &&
+                lat in -90.0..90.0 && lon in -180.0..180.0 &&
+                (useRawCoordinates || !pt.isOutlier)
+            ) {
+                lastValidIdx = i
+                break
+            }
+        }
+        if (lastValidIdx == -1) return false
 
         val clampedLat = centerLat.coerceIn(-89.9, 89.9)
         val latRad = clampedLat * (PI / 180.0)
@@ -292,7 +380,7 @@ object MapProjectionMath {
         val minDistSq = minDistancePx * minDistancePx
 
         // First point
-        val first = trackPoints.first()
+        val first = trackPoints[firstValidIdx]
         val fLat = if (useRawCoordinates) first.rawLatitude else first.latitude
         val fLon = if (useRawCoordinates) first.rawLongitude else first.longitude
         val p0x = (normalizeLongitudeDelta(fLon - centerLon) * cosLat * scale).toFloat() + halfW
@@ -305,20 +393,28 @@ object MapProjectionMath {
         if (useRawCoordinates) {
             var lastX = p0x
             var lastY = p0y
-            for (i in 1 until trackPoints.size) {
+            for (i in firstValidIdx + 1 until lastValidIdx) {
                 val pt = trackPoints[i]
                 val lat = pt.rawLatitude
                 val lon = pt.rawLongitude
+                if (lat == 0.0 || lon == 0.0 || lat.isNaN() || lon.isNaN() ||
+                    lat !in -90.0..90.0 || lon !in -180.0..180.0
+                ) continue
+
                 val x = (normalizeLongitudeDelta(lon - centerLon) * cosLat * scale).toFloat() + halfW
                 val y = (-(lat - clampedLat) * scale).toFloat() + halfH
                 val dx = x - lastX
                 val dy = y - lastY
-                if (i == trackPoints.size - 1 || dx * dx + dy * dy >= minDistSq) {
+                if (dx * dx + dy * dy >= minDistSq) {
                     targetPath.lineTo(x, y)
                     lastX = x
                     lastY = y
                 }
             }
+            val last = trackPoints[lastValidIdx]
+            val rawFinalX = (normalizeLongitudeDelta(last.rawLongitude - centerLon) * cosLat * scale).toFloat() + halfW
+            val rawFinalY = (-(last.rawLatitude - clampedLat) * scale).toFloat() + halfH
+            targetPath.lineTo(rawFinalX, rawFinalY)
             return true
         }
 
@@ -328,10 +424,14 @@ object MapProjectionMath {
         var isFirstMid = true
         var pointCount = 1
 
-        for (i in 1 until trackPoints.size - 1) {
+        for (i in firstValidIdx + 1 until lastValidIdx) {
             val pt = trackPoints[i]
             val lat = pt.latitude
             val lon = pt.longitude
+            if (lat == 0.0 || lon == 0.0 || lat.isNaN() || lon.isNaN() ||
+                lat !in -90.0..90.0 || lon !in -180.0..180.0 || pt.isOutlier
+            ) continue
+
             val currX = (normalizeLongitudeDelta(lon - centerLon) * cosLat * scale).toFloat() + halfW
             val currY = (-(lat - clampedLat) * scale).toFloat() + halfH
 
@@ -353,13 +453,13 @@ object MapProjectionMath {
         }
 
         // Final point always connected
-        val last = trackPoints.last()
-        val lastX = (normalizeLongitudeDelta(last.longitude - centerLon) * cosLat * scale).toFloat() + halfW
-        val lastY = (-(last.latitude - clampedLat) * scale).toFloat() + halfH
+        val last = trackPoints[lastValidIdx]
+        val finalX = (normalizeLongitudeDelta(last.longitude - centerLon) * cosLat * scale).toFloat() + halfW
+        val finalY = (-(last.latitude - clampedLat) * scale).toFloat() + halfH
         if (pointCount > 1) {
-            targetPath.quadraticTo(prevX, prevY, (prevX + lastX) / 2f, (prevY + lastY) / 2f)
+            targetPath.quadraticTo(prevX, prevY, (prevX + finalX) / 2f, (prevY + finalY) / 2f)
         }
-        targetPath.lineTo(lastX, lastY)
+        targetPath.lineTo(finalX, finalY)
 
         return true
     }

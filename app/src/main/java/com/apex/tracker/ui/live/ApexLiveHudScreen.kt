@@ -130,7 +130,7 @@ fun ApexLiveHudScreen(
             .fillMaxSize()
             .background(colors.canvasBackground)
     ) {
-        val isCompact = maxHeight < 660.dp
+        val isCompact = maxHeight < 780.dp
         val columnModifier = if (isCompact) {
             Modifier
                 .fillMaxSize()
@@ -151,7 +151,7 @@ fun ApexLiveHudScreen(
             val mapModifier = if (isCompact) {
                 Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
+                    .height(200.dp)
                     .heightIn(min = 160.dp)
                     .clip(mapShape)
                     .border(1.dp, colors.borderSubtle, mapShape)
@@ -597,7 +597,7 @@ private fun EditorialMetricsDashboard(
                     AnimatedNumeralTicker(
                         text = movingTimeFormatted,
                         style = typography.MetricMedium.copy(
-                            fontSize = 16.sp,
+                            fontSize = 15.sp,
                             color = colors.textPrimary,
                             fontWeight = FontWeight.Bold
                         )
@@ -620,14 +620,26 @@ private fun EditorialMetricsDashboard(
                         overflow = TextOverflow.Ellipsis
                     )
                     Spacer(modifier = Modifier.height(2.dp))
-                    AnimatedNumeralTicker(
-                        text = "$avgSpeedFormatted km/h",
-                        style = typography.MetricMedium.copy(
-                            fontSize = 16.sp,
-                            color = colors.textPrimary,
-                            fontWeight = FontWeight.Bold
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        AnimatedNumeralTicker(
+                            text = avgSpeedFormatted,
+                            style = typography.MetricMedium.copy(
+                                fontSize = 15.sp,
+                                color = colors.textPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
                         )
-                    )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            text = "km/h",
+                            style = typography.LabelMicro.copy(
+                                fontSize = 9.sp,
+                                color = colors.slateMuted
+                            ),
+                            modifier = Modifier.padding(bottom = 1.5.dp),
+                            maxLines = 1
+                        )
+                    }
                 }
 
                 // AVG PACE
@@ -646,14 +658,26 @@ private fun EditorialMetricsDashboard(
                         overflow = TextOverflow.Ellipsis
                     )
                     Spacer(modifier = Modifier.height(2.dp))
-                    AnimatedNumeralTicker(
-                        text = "$avgPaceFormatted /km",
-                        style = typography.MetricMedium.copy(
-                            fontSize = 16.sp,
-                            color = colors.textPrimary,
-                            fontWeight = FontWeight.Bold
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        AnimatedNumeralTicker(
+                            text = avgPaceFormatted,
+                            style = typography.MetricMedium.copy(
+                                fontSize = 15.sp,
+                                color = colors.textPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
                         )
-                    )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            text = "/km",
+                            style = typography.LabelMicro.copy(
+                                fontSize = 9.sp,
+                                color = colors.slateMuted
+                            ),
+                            modifier = Modifier.padding(bottom = 1.5.dp),
+                            maxLines = 1
+                        )
+                    }
                 }
             }
         }
