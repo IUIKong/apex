@@ -12,24 +12,23 @@
         <!-- Outer Dynamic Apex Chevron Peak (Crisp White #FFFFFF) -->
         <path
             android:fillColor="#FFFFFF"
-            android:pathData="M54,27 L71,55 L65.5,55 L54,36.5 L42.5,55 L37,55 Z" />
+            android:pathData="M54,23 L78,56 L71,56 L54,35 L37,56 L30,56 Z" />
 
         <!-- Inner Aerodynamic Chevron (Electric Cyan #00F5D4) -->
         <path
             android:fillColor="#00F5D4"
-            android:pathData="M54,39.5 L66,61 L61.5,61 L54,48 L46.5,61 L42,61 Z" />
+            android:pathData="M54,38 L72,65 L66,65 L54,49 L42,65 L36,65 Z" />
 
-        <!-- Forward-Propelling Runner Silhouette Emblem -->
-        <!-- Runner Head / Cadence Beacon Dot (Electric Lime #00FF87) -->
+        <!-- Forward-Propelling Runner Velocity Beacon Dot (Electric Lime #00FF87) -->
         <path
             android:fillColor="#00FF87"
-            android:pathData="M54,63 C55.66,63 57,64.34 57,66 C57,67.66 55.66,69 54,69 C52.34,69 51,67.66 51,66 C51,64.34 52.34,63 54,63 Z" />
+            android:pathData="M54,67 C56.2,67 58,68.8 58,71 C58,73.2 56.2,75 54,75 C51.8,75 50,73.2 50,71 C50,68.8 51.8,67 54,67 Z" />
 
         <!-- Ground Horizon Baseline Rule (Platinum #F1F5F9) -->
         <path
             android:strokeColor="#F1F5F9"
-            android:strokeWidth="1.6"
+            android:strokeWidth="2.2"
             android:strokeLineCap="round"
-            android:pathData="M38,76 L70,76" />
+            android:pathData="M36,82 L72,82" />
     </group>
 </vector>

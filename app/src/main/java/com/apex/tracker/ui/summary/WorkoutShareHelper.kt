@@ -261,7 +261,7 @@ object WorkoutShareHelper {
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
         }
         val legendPaintFinish = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFFF3B56.toInt() // Electric Coral/Crimson
+            color = 0xFFEF4444.toInt() // Electric Crimson (punchyCrimson)
             textSize = 14f
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
         }
@@ -365,11 +365,11 @@ object WorkoutShareHelper {
 
             // Finish Pin (Electric Crimson Beacon)
             val finishHaloPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = 0x38FF3B56.toInt()
+                color = 0x38EF4444.toInt()
                 style = Paint.Style.FILL
             }
             val finishDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = 0xFFFF3B56.toInt()
+                color = 0xFFEF4444.toInt()
                 style = Paint.Style.FILL
             }
             canvas.drawCircle(finishX, finishY, 14f, finishHaloPaint)

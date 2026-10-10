@@ -74,13 +74,13 @@ class ThemeToggleTest {
     @Test
     fun testLiveHudUiStateThemeTransitions() {
         val defaultState = LiveHudUiState()
-        assertThat(defaultState.isDarkTheme).isFalse()
+        assertThat(defaultState.isDarkTheme).isTrue()
 
-        val darkState = defaultState.copy(isDarkTheme = true)
-        assertThat(darkState.isDarkTheme).isTrue()
+        val lightState = defaultState.copy(isDarkTheme = false)
+        assertThat(lightState.isDarkTheme).isFalse()
 
-        val toggledBackState = darkState.copy(isDarkTheme = false)
-        assertThat(toggledBackState.isDarkTheme).isFalse()
+        val toggledBackState = lightState.copy(isDarkTheme = true)
+        assertThat(toggledBackState.isDarkTheme).isTrue()
     }
 
     @Test

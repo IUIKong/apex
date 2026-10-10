@@ -43,7 +43,7 @@ import kotlin.math.sin
  * Editorial Athletic Opening Screen:
  * 1. Pure Full-Screen Smooth Pixelated Moving Gradient flowing continuously across the display.
  * 2. Strictly displays "R U N" in large, bold, athletic typography with optical tracking.
- * 3. 3-second cinematic duration before transitioning smoothly into the main app.
+ * 3. 4-second cinematic duration before transitioning smoothly into the main app.
  * 4. Tap anywhere to skip instantly.
  */
 @Composable
@@ -51,7 +51,7 @@ fun ApexSplashIntroScreen(
     onFinish: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Animation Controllers for 3-second cinematic intro
+    // Animation Controllers for 4-second cinematic intro
     val contentAlpha = remember { Animatable(0f) }
     val contentScale = remember { Animatable(0.94f) }
 
@@ -78,7 +78,7 @@ fun ApexSplashIntroScreen(
             }
     ) {
         LaunchedEffect(Unit) {
-            // Phase 1: Smooth 350ms entrance fade-in and scale spring
+            // Phase 1: Smooth 400ms entrance fade-in and scale spring
             launch {
                 contentScale.animateTo(
                     targetValue = 1f,
@@ -87,16 +87,16 @@ fun ApexSplashIntroScreen(
             }
             contentAlpha.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(350, easing = CubicBezierEasing(0.2f, 0.0f, 0.2f, 1.0f))
+                animationSpec = tween(400, easing = CubicBezierEasing(0.2f, 0.0f, 0.2f, 1.0f))
             )
 
-            // Phase 2: Hold on the glowing "R U N" full-screen moving gradient for 2350ms (Total ~3.0s)
-            delay(2350)
+            // Phase 2: Hold on the glowing "R U N" full-screen moving gradient for 3200ms (Total ~4.0s)
+            delay(3200)
 
-            // Phase 3: Smooth 300ms fade-out transition into live cockpit
+            // Phase 3: Smooth 400ms fade-out transition into live cockpit
             contentAlpha.animateTo(
                 targetValue = 0f,
-                animationSpec = tween(300, easing = CubicBezierEasing(0.4f, 0.0f, 1.0f, 1.0f))
+                animationSpec = tween(400, easing = CubicBezierEasing(0.4f, 0.0f, 1.0f, 1.0f))
             )
 
             onFinish()

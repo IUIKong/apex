@@ -9,12 +9,15 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -65,6 +68,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
@@ -107,6 +111,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes.layoutInDisplayCutoutMode =
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
         window.setBackgroundDrawableResource(R.color.canvas_background)
         requestRequiredPermissions()
         AppUpdateManager.cleanupDownloadedApks(applicationContext)
@@ -240,8 +249,31 @@ fun MainAppContent(
     val summaryState by viewModel.summaryState.collectAsStateWithLifecycle()
     val allWorkouts by viewModel.allWorkouts.collectAsStateWithLifecycle()
 
+    // Silky entrance fade-in and subtle scale-in when opening app or completing intro
+    val entranceAlpha = remember { Animatable(0f) }
+    val entranceScale = remember { Animatable(0.985f) }
+
+    LaunchedEffect(Unit) {
+        launch {
+            entranceScale.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(450, easing = CubicBezierEasing(0.16f, 1.0f, 0.3f, 1.0f))
+            )
+        }
+        entranceAlpha.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(450, easing = CubicBezierEasing(0.16f, 1.0f, 0.3f, 1.0f))
+        )
+    }
+
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .graphicsLayer {
+                alpha = entranceAlpha.value
+                scaleX = entranceScale.value
+                scaleY = entranceScale.value
+            },
         containerColor = ApexTheme.colors.canvasBackground,
         contentWindowInsets = WindowInsets.statusBars,
         bottomBar = {

@@ -5,11 +5,11 @@ import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
-import android.media.ToneGenerator
 import android.os.SystemClock
 import android.view.HapticFeedbackConstants
 import android.view.SoundEffectConstants
 import android.view.View
+import kotlin.math.cos
 import kotlin.math.exp
 import kotlin.math.sin
 
@@ -19,9 +19,10 @@ import kotlin.math.sin
  * Design constraints:
  * - Triggered ONLY when a user explicitly taps a button or interactive control.
  * - ZERO automated sound, zero periodic sounds, zero sounds during background sensor tracking.
- * - Uses a statically preloaded, synthesized 16ms tactile chronometer impulse on [AudioTrack]
- *   which plays with <1ms latency and bypasses the Android OS "Touch sounds" disabled setting.
- * - Provides graceful fallback to [ToneGenerator] and system sound effects.
+ * - Warm, subtle mechanical transient click (~520Hz down to ~160Hz over 10ms with soft exponential decay).
+ * - Gentle amplitude (~2400 out of 32767) to prevent harsh or metallic artifacts.
+ * - Smooth Tukey cosine ramp-down to eliminate DC offset pops.
+ * - Single playback per tap (no double-sound layering).
  * - Respects the user's silent mode (silent/vibrate) and the in-app audio feedback toggle.
  */
 object ApexAudioFeedback {
@@ -29,7 +30,7 @@ object ApexAudioFeedback {
     var isEnabled: Boolean = true
 
     private var lastClickTimeMs: Long = 0L
-    private const val DEBOUNCE_MS = 35L
+    private const val DEBOUNCE_MS = 40L
 
     @Volatile
     private var isInitialized = false
@@ -42,18 +43,29 @@ object ApexAudioFeedback {
             isInitialized = true
             try {
                 val sampleRate = 44100
-                val durationSec = 0.016 // 16 milliseconds
+                val durationSec = 0.010 // 10 milliseconds
                 val numSamples = (sampleRate * durationSec).toInt()
                 val buffer = ShortArray(numSamples)
 
-                // Synthesize a crisp, subtle tactile chronometer switch click:
-                // High initial transient impulse decaying rapidly with exponential envelope
+                // Synthesize a warm, subtle tactile chronometer micro-click:
+                // Soft transient impulse (520Hz decaying to 160Hz) with rapid exponential decay
+                // and a smooth window envelope to avoid square edges or high-frequency hiss.
                 for (i in 0 until numSamples) {
                     val t = i.toDouble() / sampleRate
-                    val decay = exp(-t * 320.0) // sharp 16ms decay
-                    val freq = 2200.0 * exp(-t * 90.0) // pitch drops from 2.2kHz to 500Hz
+                    val progress = i.toDouble() / numSamples
+                    val decay = exp(-t * 460.0)
+                    val freq = 520.0 * exp(-t * 120.0)
                     val wave = sin(2.0 * Math.PI * freq * t)
-                    buffer[i] = (wave * decay * 14000.0).toInt().coerceIn(-32768, 32767).toShort()
+
+                    // Cosine window ramp-down on final 20% of samples
+                    val window = if (progress > 0.8) {
+                        0.5 * (1.0 + cos(Math.PI * (progress - 0.8) / 0.2))
+                    } else {
+                        1.0
+                    }
+
+                    // Gentle amplitude (2400) gives a satisfying subtle tactile tick
+                    buffer[i] = (wave * decay * window * 2400.0).toInt().coerceIn(-32768, 32767).toShort()
                 }
 
                 val attributes = AudioAttributes.Builder()
@@ -83,7 +95,7 @@ object ApexAudioFeedback {
     }
 
     /**
-     * Plays a crisp tactile click sound using the active [View].
+     * Plays a crisp tactile click sound and haptic tap using the active [View].
      */
     fun playClick(view: View?) {
         if (!isEnabled || view == null) return
@@ -95,16 +107,12 @@ object ApexAudioFeedback {
             view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
         } catch (_: Throwable) {}
 
-        try {
-            view.playSoundEffect(SoundEffectConstants.CLICK)
-        } catch (_: Throwable) {}
-
         val audioManager = view.context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
         if (audioManager != null && audioManager.ringerMode == AudioManager.RINGER_MODE_SILENT) {
             return
         }
 
-        playSynthesizedClick()
+        playWarmTactileClick(view)
     }
 
     /**
@@ -121,10 +129,10 @@ object ApexAudioFeedback {
             return
         }
 
-        playSynthesizedClick()
+        playWarmTactileClick(null)
     }
 
-    private fun playSynthesizedClick() {
+    private fun playWarmTactileClick(view: View?) {
         try {
             ensureAudioInitialized()
             val track = clickAudioTrack
@@ -136,11 +144,9 @@ object ApexAudioFeedback {
             }
         } catch (_: Throwable) {}
 
-        // Fallback: ToneGenerator if AudioTrack failed
+        // Fallback: standard system click if custom AudioTrack is unavailable
         try {
-            val toneGen = ToneGenerator(AudioManager.STREAM_MUSIC, 35)
-            toneGen.startTone(ToneGenerator.TONE_CDMA_KEYPAD_VOLUME_KEY_LITE, 20)
-            toneGen.release()
+            view?.playSoundEffect(SoundEffectConstants.CLICK)
         } catch (_: Throwable) {}
     }
 }
