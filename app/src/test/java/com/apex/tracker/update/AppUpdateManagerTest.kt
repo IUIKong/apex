@@ -56,4 +56,49 @@ class AppUpdateManagerTest {
         manager.resetStatus()
         assertThat(manager.status.value).isEqualTo(UpdateStatus.Idle)
     }
+
+    @Test
+    fun formatReleaseNotes_stripsHashesFromHeaders() {
+        val raw = "## WHAT'S CHANGED IN V1.1\n### PERFORMANCE & AUDIO"
+        val formatted = formatReleaseNotes(
+            rawText = raw,
+            primaryColor = androidx.compose.ui.graphics.Color.White,
+            accentColor = androidx.compose.ui.graphics.Color.Cyan,
+            subtleColor = androidx.compose.ui.graphics.Color.Gray
+        )
+        val text = formatted.text
+        assertThat(text).doesNotContain("##")
+        assertThat(text).doesNotContain("###")
+        assertThat(text).contains("WHAT'S CHANGED IN V1.1")
+        assertThat(text).contains("PERFORMANCE & AUDIO")
+    }
+
+    @Test
+    fun formatReleaseNotes_formatsBulletsAndBoldAndHashes() {
+        val raw = """
+            ## Release v1.1
+            - **Theme Toggle**: Added Settings switch
+            - **Commit**: `f57eb79`
+            - **SHA256**: `9B305E83470B1D5300E2086F8275D124ACD45BA788EE21EE9D1F2A5432B47387`
+        """.trimIndent()
+
+        val formatted = formatReleaseNotes(
+            rawText = raw,
+            primaryColor = androidx.compose.ui.graphics.Color.White,
+            accentColor = androidx.compose.ui.graphics.Color.Cyan,
+            subtleColor = androidx.compose.ui.graphics.Color.Gray
+        )
+        val text = formatted.text
+
+        // Verify markdown symbols are cleaned
+        assertThat(text).doesNotContain("##")
+        assertThat(text).doesNotContain("**")
+        assertThat(text).doesNotContain("`")
+
+        // Verify bullets and contents are cleanly present
+        assertThat(text).contains("• Theme Toggle: Added Settings switch")
+        assertThat(text).contains("• Commit: f57eb79")
+        assertThat(text).contains("• SHA256: 9B305E83470B1D5300E2086F8275D124ACD45BA788EE21EE9D1F2A5432B47387")
+    }
 }
+

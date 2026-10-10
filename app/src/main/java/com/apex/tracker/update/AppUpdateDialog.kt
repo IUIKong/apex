@@ -44,11 +44,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.util.regex.Pattern
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.apex.tracker.ui.components.ApexLogoMark
@@ -327,12 +332,21 @@ private fun UpdateAvailableContent(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Release notes card (scrollable preview)
+        // Release notes card (scrollable preview with markdown formatting)
         if (updateInfo.releaseNotes.isNotBlank()) {
+            val formattedNotes = remember(updateInfo.releaseNotes, colors) {
+                formatReleaseNotes(
+                    rawText = updateInfo.releaseNotes,
+                    primaryColor = colors.textPrimary,
+                    accentColor = colors.electricCyan,
+                    subtleColor = colors.slateSubtle
+                )
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 140.dp)
+                    .heightIn(max = 180.dp)
                     .clip(cardShape)
                     .background(colors.surface)
                     .border(1.dp, colors.borderSubtle, cardShape)
@@ -340,11 +354,10 @@ private fun UpdateAvailableContent(
                     .verticalScroll(rememberScrollState())
             ) {
                 Text(
-                    text = updateInfo.releaseNotes,
+                    text = formattedNotes,
                     style = typography.BodyText.copy(
                         fontSize = 11.5.sp,
-                        color = colors.slateSubtle,
-                        lineHeight = 16.sp
+                        lineHeight = 16.5.sp
                     )
                 )
             }
@@ -745,3 +758,129 @@ private fun UpdateErrorContent(
         }
     }
 }
+
+/**
+ * Formats Markdown-style release notes into a rich, styled [AnnotatedString]:
+ * - Strips leading '#' from headers and renders them in bold headline styling.
+ * - Converts '- ' and '* ' into crisp colored bullet glyphs ('• ').
+ * - Formats '**bold**' spans with bold weight and primary text color.
+ * - Formats '`code`' and hashes (SHA-256, commit IDs) in monospace font with accent color.
+ * - Collapses consecutive empty lines for clean layout in the update dialog.
+ */
+fun formatReleaseNotes(
+    rawText: String,
+    primaryColor: Color,
+    accentColor: Color,
+    subtleColor: Color
+): AnnotatedString {
+    return buildAnnotatedString {
+        val lines = rawText.lines()
+        var consecutiveEmptyLines = 0
+
+        lines.forEachIndexed { index, line ->
+            val trimmed = line.trim()
+
+            if (trimmed.isEmpty()) {
+                consecutiveEmptyLines++
+                if (consecutiveEmptyLines <= 1 && index < lines.size - 1) {
+                    append("\n")
+                }
+                return@forEachIndexed
+            }
+            consecutiveEmptyLines = 0
+
+            when {
+                // Markdown Headers: #, ##, ###, ####
+                trimmed.startsWith("#") -> {
+                    val headerText = trimmed.trimStart('#').trim()
+                    if (headerText.isNotEmpty()) {
+                        withStyle(
+                            SpanStyle(
+                                fontWeight = FontWeight.Black,
+                                color = primaryColor,
+                                fontSize = 12.5.sp,
+                                letterSpacing = 0.5.sp
+                            )
+                        ) {
+                            append(headerText)
+                        }
+                    }
+                }
+
+                // Markdown Bullet points: - item, * item
+                trimmed.startsWith("- ") || trimmed.startsWith("* ") -> {
+                    val bulletContent = trimmed.substring(2).trim()
+                    withStyle(
+                        SpanStyle(
+                            color = accentColor,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.5.sp
+                        )
+                    ) {
+                        append("• ")
+                    }
+                    appendFormattedInline(bulletContent, primaryColor, accentColor, subtleColor)
+                }
+
+                // Regular lines (e.g. metadata, SHA-256 / commit notes)
+                else -> {
+                    appendFormattedInline(trimmed, primaryColor, accentColor, subtleColor)
+                }
+            }
+
+            if (index < lines.size - 1) {
+                append("\n")
+            }
+        }
+    }
+}
+
+private fun AnnotatedString.Builder.appendFormattedInline(
+    text: String,
+    primaryColor: Color,
+    accentColor: Color,
+    subtleColor: Color
+) {
+    val inlinePattern = Pattern.compile("(\\*\\*.*?\\*\\*|`.*?`)")
+    val matcher = inlinePattern.matcher(text)
+    var lastIndex = 0
+
+    while (matcher.find()) {
+        val start = matcher.start()
+        val end = matcher.end()
+
+        if (start > lastIndex) {
+            withStyle(SpanStyle(color = subtleColor)) {
+                append(text.substring(lastIndex, start))
+            }
+        }
+
+        val match = matcher.group()
+        if (match.startsWith("**") && match.endsWith("**") && match.length >= 4) {
+            val boldContent = match.substring(2, match.length - 2)
+            withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = primaryColor)) {
+                append(boldContent)
+            }
+        } else if (match.startsWith("`") && match.endsWith("`") && match.length >= 2) {
+            val codeContent = match.substring(1, match.length - 1)
+            withStyle(
+                SpanStyle(
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.SemiBold,
+                    color = accentColor,
+                    fontSize = 10.5.sp
+                )
+            ) {
+                append(codeContent)
+            }
+        }
+        lastIndex = end
+    }
+
+    if (lastIndex < text.length) {
+        withStyle(SpanStyle(color = subtleColor)) {
+            append(text.substring(lastIndex))
+        }
+    }
+}
+
