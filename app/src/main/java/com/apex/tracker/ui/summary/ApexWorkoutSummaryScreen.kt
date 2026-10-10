@@ -1,6 +1,14 @@
 package com.apex.tracker.ui.summary
 
 import android.widget.Toast
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -13,18 +21,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,9 +42,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
-import com.apex.tracker.ui.sound.ApexAudioFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,18 +57,23 @@ import com.apex.tracker.ui.state.WorkoutSummaryUiState
 import com.apex.tracker.ui.theme.ApexDimens
 import com.apex.tracker.ui.theme.ApexTheme
 import kotlinx.coroutines.launch
-
 import java.util.Locale
+import kotlin.math.cos
+import kotlin.math.sin
 
+/**
+ * Editorial Post-Workout Summary Screen.
+ *
+ * Displays celebration animations, count-up telemetry, vector circuit route map,
+ * and social share generation. Deletion of workouts is strictly confined to the Logbook.
+ */
 @Composable
 fun ApexWorkoutSummaryScreen(
     summaryState: WorkoutSummaryUiState,
     onDoneClick: () -> Unit = {},
-    onDeleteClick: (() -> Unit)? = null,
     onShareClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    val view = LocalView.current
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var isSharing by remember { mutableStateOf(false) }
@@ -66,16 +81,36 @@ fun ApexWorkoutSummaryScreen(
     val scrollState = rememberScrollState()
     val colors = ApexTheme.colors
     val typography = ApexTheme.typography
-    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
-    val distKm = UiFormatters.formatDistanceKm(summaryState.totalDistanceMeters)
-    val movingTimeStr = UiFormatters.formatDuration(summaryState.movingTimeSeconds)
+    // Animated Count-up for stats on workout finish
+    val countUpProgress = remember { Animatable(0f) }
+    LaunchedEffect(summaryState.activityId) {
+        countUpProgress.snapTo(0f)
+        countUpProgress.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(
+                durationMillis = 1100,
+                easing = CubicBezierEasing(0.16f, 1.0f, 0.3f, 1.0f)
+            )
+        )
+    }
+
+    val progress = countUpProgress.value
+    val animDistKmVal = (summaryState.totalDistanceMeters * progress) / 1000.0
+    val animDistKmStr = String.format(Locale.US, "%.2f", animDistKmVal)
+
+    val animMovingSecVal = (summaryState.movingTimeSeconds * progress).toLong()
+    val animMovingTimeStr = UiFormatters.formatDuration(animMovingSecVal)
     val elapsedTimeStr = UiFormatters.formatDuration(summaryState.elapsedTimeSeconds)
+
     val avgPaceStr = UiFormatters.formatPace(summaryState.avgPaceSecPerKm)
-    val avgSpeedKmh = if (summaryState.movingTimeSeconds > 0) {
+    val animPaceStr = if (progress > 0.15f) avgPaceStr else "--:--"
+
+    val fullAvgSpeedKmh = if (summaryState.movingTimeSeconds > 0) {
         (summaryState.totalDistanceMeters / summaryState.movingTimeSeconds) * 3.6
     } else 0.0
-    val avgSpeedStr = String.format(Locale.US, "%.1f", avgSpeedKmh)
+    val animSpeedKmh = fullAvgSpeedKmh * progress
+    val animSpeedStr = String.format(Locale.US, "%.1f", animSpeedKmh)
 
     Box(
         modifier = modifier
@@ -93,66 +128,14 @@ fun ApexWorkoutSummaryScreen(
                 ),
             verticalArrangement = Arrangement.spacedBy(ApexDimens.SpacingCards)
         ) {
-            // Header: Clean Title & Sport Badge
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(ApexDimens.RadiusCardStandard))
-                    .background(colors.surface)
-                    .border(1.dp, colors.borderSubtle, RoundedCornerShape(ApexDimens.RadiusCardStandard))
-                    .padding(14.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        ApexLogoMark(size = 30.dp)
-                        Column {
-                            Text(
-                                text = "WORKOUT SUMMARY",
-                                style = typography.LabelMicro.copy(
-                                    color = colors.electricCyan,
-                                    fontWeight = FontWeight.Black,
-                                    letterSpacing = 1.2.sp
-                                )
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = summaryState.title,
-                                style = typography.Headline.copy(
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Black,
-                                    color = colors.textPrimary
-                                )
-                            )
-                        }
-                    }
+            // Celebratory Animated Header with Expanding Aura & Particle Bursts
+            CelebratoryWorkoutHeader(
+                title = summaryState.title,
+                activityType = summaryState.activityType,
+                progress = progress
+            )
 
-                    // Activity Type Badge
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(ApexDimens.RadiusPillFull))
-                            .background(colors.surface)
-                            .border(1.dp, colors.borderSubtle, RoundedCornerShape(ApexDimens.RadiusPillFull))
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            text = summaryState.activityType.uppercase(),
-                            style = typography.LabelMicro.copy(
-                                color = colors.textPrimary,
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-                    }
-                }
-            }
-
-            // 1. 4-Grid Core Metrics Overview
+            // 1. 4-Grid Core Metrics Overview (Animated Count-Up)
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(ApexDimens.SpacingCards)
@@ -163,14 +146,14 @@ fun ApexWorkoutSummaryScreen(
                 ) {
                     MetricCard(
                         label = "DISTANCE",
-                        value = distKm,
+                        value = animDistKmStr,
                         unit = "km",
                         subtext = "Accepted trajectory",
                         modifier = Modifier.weight(1f)
                     )
                     MetricCard(
                         label = "MOVING TIME",
-                        value = movingTimeStr,
+                        value = animMovingTimeStr,
                         subtext = "Elapsed: $elapsedTimeStr",
                         modifier = Modifier.weight(1f)
                     )
@@ -182,14 +165,14 @@ fun ApexWorkoutSummaryScreen(
                 ) {
                     MetricCard(
                         label = "AVG PACE",
-                        value = avgPaceStr,
+                        value = animPaceStr,
                         unit = "/km",
                         subtext = "Moving pace",
                         modifier = Modifier.weight(1f)
                     )
                     MetricCard(
                         label = "AVG SPEED",
-                        value = avgSpeedStr,
+                        value = animSpeedStr,
                         unit = "km/h",
                         subtext = "GPS telemetry",
                         modifier = Modifier.weight(1f)
@@ -243,7 +226,9 @@ fun ApexWorkoutSummaryScreen(
                 ) {
                     if (isSharing) {
                         CircularProgressIndicator(
-                            modifier = Modifier.width(16.dp).height(16.dp),
+                            modifier = Modifier
+                                .width(16.dp)
+                                .height(16.dp),
                             color = colors.electricCyan,
                             strokeWidth = 2.dp
                         )
@@ -261,7 +246,9 @@ fun ApexWorkoutSummaryScreen(
                             imageVector = Icons.Default.Share,
                             contentDescription = "Share Activity",
                             tint = colors.electricCyan,
-                            modifier = Modifier.width(18.dp).height(18.dp)
+                            modifier = Modifier
+                                .width(18.dp)
+                                .height(18.dp)
                         )
                         Text(
                             text = "SHARE ACTIVITY",
@@ -297,67 +284,156 @@ fun ApexWorkoutSummaryScreen(
                 )
             }
 
-            // Delete Workout Link if available
-            if (onDeleteClick != null && summaryState.activityId.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+    }
+}
+
+/**
+ * Celebratory Header Banner with particle fireworks and expanding concentric victory rings.
+ */
+@Composable
+private fun CelebratoryWorkoutHeader(
+    title: String,
+    activityType: String,
+    progress: Float
+) {
+    val colors = ApexTheme.colors
+    val typography = ApexTheme.typography
+    val cardShape = remember { RoundedCornerShape(ApexDimens.RadiusCardStandard) }
+    val pillShape = remember { RoundedCornerShape(ApexDimens.RadiusPillFull) }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "victory_pulse")
+    val victoryAuraScale by infiniteTransition.animateFloat(
+        initialValue = 0.92f,
+        targetValue = 1.25f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "victory_scale"
+    )
+
+    // Pre-calculated spark angles and colors
+    val sparkColors = remember {
+        listOf(
+            Color(0xFF00F5D4), // Electric Cyan
+            Color(0xFFD9531E), // Terracotta
+            Color(0xFF00FF87), // Electric Lime
+            Color(0xFFF59E0B), // Laser Amber
+            Color(0xFFFFFFFF), // Pure White
+            Color(0xFF38BDF8)  // Sky Blue
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(cardShape)
+            .background(colors.surface)
+            .border(1.dp, colors.borderSubtle, cardShape)
+            .padding(14.dp)
+    ) {
+        // Background animated celebration particles
+        Canvas(modifier = Modifier.matchParentSize()) {
+            val cx = 28.dp.toPx()
+            val cy = size.height / 2f
+            val maxDistance = size.width * 0.7f
+
+            if (progress < 0.98f) {
+                val p = progress.coerceIn(0f, 1f)
+                val alpha = (1f - p).coerceIn(0f, 1f) * 0.75f
+
+                for (i in 0 until 24) {
+                    val angle = (i * (360.0 / 24.0) * (Math.PI / 180.0)).toFloat()
+                    val dist = (p * (maxDistance * (0.4f + (i % 5) * 0.15f)))
+                    val sparkX = cx + dist * cos(angle)
+                    val sparkY = cy + dist * sin(angle)
+                    val sparkColor = sparkColors[i % sparkColors.size].copy(alpha = alpha)
+                    val sparkRadius = (2.5f + (i % 3) * 1.2f) * (1f - p * 0.5f)
+
+                    drawCircle(
+                        color = sparkColor,
+                        radius = sparkRadius,
+                        center = Offset(sparkX, sparkY)
+                    )
+                }
+            }
+
+            // Concentric expanding ring around emblem
+            val ringRadius = 22.dp.toPx() * victoryAuraScale
+            drawCircle(
+                color = colors.electricCyan.copy(alpha = 0.15f),
+                radius = ringRadius,
+                center = Offset(cx, cy),
+                style = Stroke(1.5f)
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .tactilePress(pressedScale = 0.95f) { showDeleteConfirmDialog = true }
-                        .padding(vertical = 8.dp),
+                    modifier = Modifier.size(36.dp),
                     contentAlignment = Alignment.Center
                 ) {
+                    ApexLogoMark(size = 32.dp)
+                }
+
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(colors.electricCyan)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "SESSION COMPLETED",
+                            style = typography.LabelMicro.copy(
+                                color = colors.electricCyan,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 1.3.sp
+                            )
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "DELETE THIS WORKOUT",
-                        style = typography.LabelMicro.copy(
-                            color = colors.punchyCrimson,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
+                        text = title,
+                        style = typography.Headline.copy(
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Black,
+                            color = colors.textPrimary
                         )
                     )
                 }
             }
 
-            if (showDeleteConfirmDialog) {
-                AlertDialog(
-                    onDismissRequest = { showDeleteConfirmDialog = false },
-                    title = {
-                        Text(
-                            text = "Delete Workout?",
-                            style = typography.Headline.copy(color = colors.textPrimary)
-                        )
-                    },
-                    text = {
-                        Text(
-                            text = "This will permanently remove this recorded session from your device.",
-                            style = typography.BodyText.copy(color = colors.slateSubtle)
-                        )
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                ApexAudioFeedback.playClick(view)
-                                showDeleteConfirmDialog = false
-                                onDeleteClick?.invoke()
-                            }
-                        ) {
-                            Text("DELETE", color = colors.punchyCrimson, fontWeight = FontWeight.Bold)
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(
-                            onClick = {
-                                ApexAudioFeedback.playClick(view)
-                                showDeleteConfirmDialog = false
-                            }
-                        ) {
-                            Text("CANCEL", color = colors.slateMuted)
-                        }
-                    },
-                    containerColor = colors.surfaceElevated
+            // Activity Type Badge
+            Box(
+                modifier = Modifier
+                    .clip(pillShape)
+                    .background(colors.surfaceHigh)
+                    .border(1.dp, colors.borderSubtle, pillShape)
+                    .padding(horizontal = 10.dp, vertical = 5.dp)
+            ) {
+                Text(
+                    text = activityType.uppercase(),
+                    style = typography.LabelMicro.copy(
+                        color = colors.textPrimary,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 9.sp,
+                        letterSpacing = 0.8.sp
+                    )
                 )
             }
-
-            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }

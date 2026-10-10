@@ -53,10 +53,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,6 +69,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -74,6 +77,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.apex.tracker.BuildConfig
 import com.apex.tracker.ui.components.tactilePress
 import com.apex.tracker.ui.history.ApexWorkoutsHistoryScreen
 import com.apex.tracker.ui.live.ApexLiveHudScreen
@@ -83,6 +87,9 @@ import com.apex.tracker.ui.summary.ApexWorkoutSummaryScreen
 import com.apex.tracker.ui.theme.ApexDimens
 import com.apex.tracker.ui.theme.ApexTheme
 import com.apex.tracker.ui.viewmodel.ApexTrackerViewModel
+import com.apex.tracker.update.AppUpdateDialog
+import com.apex.tracker.update.AppUpdateManager
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -178,6 +185,16 @@ fun MainAppContent(
     var selectedTab by remember { mutableIntStateOf(1) }
     var viewingSummary by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val updateManager = remember { AppUpdateManager() }
+    val updateStatus by updateManager.status.collectAsStateWithLifecycle()
+
+    // Autonomous background check for updates on launch
+    LaunchedEffect(Unit) {
+        updateManager.checkForUpdates(BuildConfig.VERSION_NAME)
+    }
+
     // Intercept hardware Back button when reviewing a workout summary
     BackHandler(enabled = viewingSummary) {
         viewModel.resetLiveHud()
@@ -237,12 +254,6 @@ fun MainAppContent(
                             viewModel.resetLiveHud()
                             viewingSummary = false
                             selectedTab = 0 // Switch to Logbook
-                        },
-                        onDeleteClick = {
-                            viewModel.deleteWorkout(summaryState.activityId)
-                            viewModel.resetLiveHud()
-                            viewingSummary = false
-                            selectedTab = 0 // Switch to Logbook
                         }
                     )
                 } else {
@@ -274,7 +285,13 @@ fun MainAppContent(
                                 },
                                 onDeleteWorkout = { workoutId ->
                                     viewModel.deleteWorkout(workoutId)
-                                }
+                                },
+                                onCheckForUpdates = {
+                                    coroutineScope.launch {
+                                        updateManager.checkForUpdates(BuildConfig.VERSION_NAME)
+                                    }
+                                },
+                                updateStatus = updateStatus
                             )
 
                             1 -> ApexLiveHudScreen(
@@ -306,6 +323,23 @@ fun MainAppContent(
             }
         }
     }
+
+    // In-app Update Dialog Modal (Auto-prompts, animated downloading, auto-installer)
+    AppUpdateDialog(
+        status = updateStatus,
+        currentVersion = BuildConfig.VERSION_NAME,
+        onStartUpdateClick = { updateInfo ->
+            coroutineScope.launch {
+                updateManager.downloadAndInstall(context, updateInfo)
+            }
+        },
+        onInstallClick = { apkFile ->
+            updateManager.installApk(context, apkFile)
+        },
+        onDismissRequest = {
+            updateManager.resetStatus()
+        }
+    )
 }
 
 /**

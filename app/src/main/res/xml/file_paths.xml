@@ -2,6 +2,7 @@
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <cache-path name="export_cache" path="exports/" />
     <cache-path name="shared_workouts" path="shared_workouts/" />
+    <cache-path name="updates" path="updates/" />
     <cache-path name="cache_root" path="." />
     <files-path name="export_files" path="exports/" />
 </paths>

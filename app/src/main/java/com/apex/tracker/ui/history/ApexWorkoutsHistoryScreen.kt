@@ -50,6 +50,7 @@ import com.apex.tracker.database.WorkoutEntity
 import com.apex.tracker.ui.state.UiFormatters
 import com.apex.tracker.ui.theme.ApexDimens
 import com.apex.tracker.ui.theme.ApexTheme
+import com.apex.tracker.update.UpdateStatus
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -59,6 +60,8 @@ fun ApexWorkoutsHistoryScreen(
     workouts: List<WorkoutEntity>,
     onWorkoutSelected: (String) -> Unit,
     onDeleteWorkout: (String) -> Unit,
+    onCheckForUpdates: (() -> Unit)? = null,
+    updateStatus: UpdateStatus = UpdateStatus.Idle,
     modifier: Modifier = Modifier
 ) {
     val view = LocalView.current
@@ -85,7 +88,7 @@ fun ApexWorkoutsHistoryScreen(
     ) {
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Screen Header: Editorial Tracksmith Logbook with Brand Emblem
+        // Screen Header: Editorial Tracksmith Logbook with Brand Emblem & Update Action
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -113,6 +116,48 @@ fun ApexWorkoutsHistoryScreen(
                             letterSpacing = 1.2.sp
                         )
                     )
+                }
+            }
+
+            // In-app Update Pill
+            if (onCheckForUpdates != null) {
+                val isUpdateAvailable = updateStatus is UpdateStatus.Available
+                val pillBorder = if (isUpdateAvailable) ApexTheme.colors.electricCyan else ApexTheme.colors.borderSubtle
+                val pillBg = if (isUpdateAvailable) ApexTheme.colors.surfaceHigh else ApexTheme.colors.surface
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(ApexDimens.RadiusPillFull))
+                        .background(pillBg)
+                        .border(1.dp, pillBorder, RoundedCornerShape(ApexDimens.RadiusPillFull))
+                        .tactilePress(pressedScale = 0.94f) {
+                            ApexAudioFeedback.playClick(view)
+                            onCheckForUpdates()
+                        }
+                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        if (isUpdateAvailable) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(ApexTheme.colors.electricCyan)
+                            )
+                        }
+                        Text(
+                            text = if (isUpdateAvailable) "UPDATE AVAILABLE" else "CHECK UPDATES",
+                            style = ApexTheme.typography.LabelMicro.copy(
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Black,
+                                color = if (isUpdateAvailable) ApexTheme.colors.electricCyan else ApexTheme.colors.slateSubtle,
+                                letterSpacing = 0.8.sp
+                            )
+                        )
+                    }
                 }
             }
         }
