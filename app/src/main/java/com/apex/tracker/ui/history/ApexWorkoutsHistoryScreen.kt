@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -65,16 +67,7 @@ fun ApexWorkoutsHistoryScreen(
     modifier: Modifier = Modifier
 ) {
     val view = LocalView.current
-    var selectedFilter by remember { mutableStateOf("ALL") }
     var workoutToDelete by remember { mutableStateOf<WorkoutEntity?>(null) }
-
-    val filteredWorkouts = remember(workouts, selectedFilter) {
-        if (selectedFilter == "ALL") {
-            workouts
-        } else {
-            workouts.filter { it.activityType.equals(selectedFilter, ignoreCase = true) }
-        }
-    }
 
     // Weekly calculations
     val totalDistanceMeters = workouts.sumOf { it.totalDistanceMeters }
@@ -98,52 +91,22 @@ fun ApexWorkoutsHistoryScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Sport Filter Chips (ALL, RUNNING, CYCLING, WALKING, HIKING)
-            SportFilterChips(
-                selectedFilter = selectedFilter,
-                onFilterSelected = { selectedFilter = it },
-                allCount = workouts.size,
-                runCount = workouts.count { it.activityType.equals("RUNNING", ignoreCase = true) },
-                rideCount = workouts.count { it.activityType.equals("CYCLING", ignoreCase = true) },
-                walkCount = workouts.count { it.activityType.equals("WALKING", ignoreCase = true) },
-                hikeCount = workouts.count { it.activityType.equals("HIKING", ignoreCase = true) }
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Workouts List
-            if (filteredWorkouts.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No $selectedFilter activities recorded",
-                        style = ApexTheme.typography.LabelMicro.copy(
-                            color = ApexTheme.colors.slateMuted,
-                            fontSize = 11.sp
-                        )
+            // Workouts List - Clean, elegant stream of workouts
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                itemsIndexed(workouts, key = { _, workout -> workout.id }) { index, workout ->
+                    WorkoutHistoryItemCard(
+                        workout = workout,
+                        onClick = { onWorkoutSelected(workout.id) },
+                        onDeleteClick = { workoutToDelete = workout },
+                        staggerIndex = index,
+                        modifier = Modifier.animateItem()
                     )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentPadding = PaddingValues(bottom = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    itemsIndexed(filteredWorkouts, key = { _, workout -> workout.id }) { index, workout ->
-                        WorkoutHistoryItemCard(
-                            workout = workout,
-                            onClick = { onWorkoutSelected(workout.id) },
-                            onDeleteClick = { workoutToDelete = workout },
-                            staggerIndex = index,
-                            modifier = Modifier.animateItem()
-                        )
-                    }
                 }
             }
         }
@@ -219,9 +182,25 @@ private fun WeeklySummaryCard(
             .clip(cardShape)
             .background(ApexTheme.colors.surface)
             .border(1.dp, ApexTheme.colors.borderSubtle, cardShape)
-            .padding(14.dp)
     ) {
-        Column {
+        // Subtle athletic hairline gradient accent harmonized with intro palette
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(2.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color(0xFF00F5D4), // Cyan
+                            Color(0xFF00FF87), // Lime
+                            Color(0xFF38BDF8), // Azure
+                            Color(0xFFF59E0B), // Amber
+                            Color(0xFFFF3B56)  // Crimson
+                        )
+                    )
+                )
+        )
+        Column(modifier = Modifier.padding(14.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -320,67 +299,6 @@ private fun MetricColumn(
             maxLines = 1,
             softWrap = false
         )
-    }
-}
-
-@Composable
-private fun SportFilterChips(
-    selectedFilter: String,
-    onFilterSelected: (String) -> Unit,
-    allCount: Int,
-    runCount: Int,
-    rideCount: Int,
-    walkCount: Int,
-    hikeCount: Int,
-    modifier: Modifier = Modifier
-) {
-    val filters = listOf(
-        "ALL" to allCount,
-        "RUNNING" to runCount,
-        "CYCLING" to rideCount,
-        "WALKING" to walkCount,
-        "HIKING" to hikeCount
-    )
-
-    val pillShape = remember { RoundedCornerShape(ApexDimens.RadiusPillFull) }
-
-    LazyRow(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(filters, key = { it.first }) { (filter, count) ->
-            val isSelected = selectedFilter.equals(filter, ignoreCase = true)
-            val displayName = when (filter) {
-                "RUNNING" -> "RUN"
-                "CYCLING" -> "RIDE"
-                "WALKING" -> "WALK"
-                "HIKING" -> "HIKE"
-                else -> "ALL"
-            }
-
-            val bg = if (isSelected) ApexTheme.colors.textPrimary else ApexTheme.colors.surface
-            val textCol = if (isSelected) ApexTheme.colors.canvasBackground else ApexTheme.colors.slateMuted
-            val borderCol = if (isSelected) ApexTheme.colors.textPrimary else ApexTheme.colors.borderSubtle
-
-            Box(
-                modifier = Modifier
-                    .clip(pillShape)
-                    .background(bg)
-                    .border(1.dp, borderCol, pillShape)
-                    .tactilePress(pressedScale = 0.92f) { onFilterSelected(filter) }
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
-            ) {
-                Text(
-                    text = "$displayName ($count)",
-                    style = ApexTheme.typography.LabelMicro.copy(
-                        fontSize = 9.5.sp,
-                        fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
-                        color = textCol,
-                        letterSpacing = 0.8.sp
-                    )
-                )
-            }
-        }
     }
 }
 

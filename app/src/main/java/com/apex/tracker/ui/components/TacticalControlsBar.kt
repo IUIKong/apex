@@ -34,6 +34,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -85,6 +87,29 @@ fun TacticalControlsBar(
 
     val luxuryEase = remember { CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f) }
 
+    val isLight = colors.canvasBackground.red > 0.5f
+    val startBrush = remember(isLight, colors) {
+        if (isLight) {
+            Brush.horizontalGradient(listOf(colors.textPrimary, Color(0xFF2E2926)))
+        } else {
+            Brush.horizontalGradient(listOf(Color(0xFF161D28), Color(0xFF1F2937)))
+        }
+    }
+    val resumeBrush = remember(isLight, colors) {
+        if (isLight) {
+            Brush.horizontalGradient(listOf(colors.electricLime, Color(0xFF388E68)))
+        } else {
+            Brush.horizontalGradient(listOf(colors.electricLime, Color(0xFF70FF00)))
+        }
+    }
+    val finishBrush = remember(isLight, colors) {
+        if (isLight) {
+            Brush.horizontalGradient(listOf(colors.electricCyan, Color(0xFFEA580C)))
+        } else {
+            Brush.horizontalGradient(listOf(colors.electricCyan, Color(0xFF00B4D8)))
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -114,7 +139,7 @@ fun TacticalControlsBar(
                         .fillMaxWidth()
                         .height(ApexDimens.HeightTacticalButton)
                         .clip(buttonShape)
-                        .background(colors.textPrimary)
+                        .background(startBrush)
                         .tactilePress(
                             pressedScale = 0.96f,
                             enabled = enabled
@@ -138,7 +163,14 @@ fun TacticalControlsBar(
                                     this.alpha = idleDotAlpha
                                 }
                                 .clip(CircleShape)
-                                .background(colors.punchyCrimson)
+                                .background(
+                                    brush = Brush.radialGradient(
+                                        colors = listOf(
+                                            Color(0xFFFF5252),
+                                            colors.punchyCrimson
+                                        )
+                                    )
+                                )
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
@@ -222,7 +254,7 @@ fun TacticalControlsBar(
                                         .fillMaxWidth()
                                         .height(ApexDimens.HeightTacticalButton)
                                         .clip(buttonShape)
-                                        .background(colors.electricLime)
+                                        .background(resumeBrush)
                                         .tactilePress(
                                             pressedScale = 0.95f,
                                             enabled = enabled
@@ -267,7 +299,7 @@ fun TacticalControlsBar(
                             .weight(1f)
                             .height(ApexDimens.HeightTacticalButton)
                             .clip(buttonShape)
-                            .background(colors.electricCyan)
+                            .background(finishBrush)
                             .tactilePress(
                                 pressedScale = 0.95f,
                                 enabled = enabled

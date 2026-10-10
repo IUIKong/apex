@@ -13,8 +13,11 @@ android {
         applicationId = "com.apex.tracker"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.0"
+
+        buildConfigField("String", "RELEASE_TAG", "\"v1\"")
+        buildConfigField("long", "BUILD_TIME_MILLIS", "${System.currentTimeMillis()}L")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

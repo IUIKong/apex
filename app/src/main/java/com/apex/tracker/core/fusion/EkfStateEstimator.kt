@@ -404,23 +404,29 @@ class EkfStateEstimator : StateEstimator {
         val rawSpeed = dRaw / dt
         val baseSpeed = min(dispSpeed, if (dRaw > 0.0) rawSpeed else dispSpeed)
         val gpsSpeed = lastGpsSpeedMps
-        val isGpsDopplerStationary = (gpsSpeed != null && gpsSpeed < 0.45f && (lastGpsSpeedAccuracyMps ?: 1f) <= 1.5f)
-        val isGpsLowDisplacement = (baseSpeed < 0.45 && rawSpeed < 0.50)
-        val isGpsStationary = isGpsDopplerStationary || isGpsLowDisplacement
-
-        val effectiveSpeed = if (isGpsStationary) {
-            if (gpsSpeed != null && gpsSpeed < 0.45f) min(baseSpeed, gpsSpeed.toDouble()) else 0.0
-        } else {
-            baseSpeed
-        }
-
         val hasAccel = autoPauseClassifier.hasAccelerationSamples()
         val eAcc = autoPauseClassifier.computeAccelerometerEnergy()
-        val isStationaryImu = hasAccel && eAcc < autoPauseClassifier.activityType.eStopMps2 && effectiveSpeed < autoPauseClassifier.activityType.vMoveMps
+        val isCycling = autoPauseClassifier.activityType == ActivityType.CYCLING
+        val hasStepCadence = hasAccel && eAcc >= autoPauseClassifier.activityType.eStopMps2
+        val hasMovementCadence = hasStepCadence || isCycling
+
+        val isGpsDopplerStationary = (gpsSpeed != null && gpsSpeed < 0.45f && (lastGpsSpeedAccuracyMps ?: 1f) <= 1.5f)
+        val isGpsLowDisplacement = (baseSpeed < 0.25 && rawSpeed < 0.30)
+        val isGpsStationary = isGpsDopplerStationary || isGpsLowDisplacement
+
+        val effectiveSpeed = if (isGpsStationary && !hasMovementCadence) {
+            if (gpsSpeed != null && gpsSpeed < 0.45f) min(baseSpeed, gpsSpeed.toDouble()) else if (gpsSpeed == null && baseSpeed >= 0.15) baseSpeed else 0.0
+        } else {
+            max(baseSpeed, if (gpsSpeed != null && gpsSpeed >= 0.40f) gpsSpeed.toDouble() else baseSpeed)
+        }
+
+        val isStationaryImu = hasAccel && !isCycling && eAcc < autoPauseClassifier.activityType.eStopMps2 && effectiveSpeed < autoPauseClassifier.activityType.vMoveMps
 
         // High accelerometer energy with near-zero GPS displacement is stationary phone shaking, NOT locomotion
-        val isStationaryShake = isGpsStationary && hasAccel && effectiveSpeed < autoPauseClassifier.activityType.vStopMps
-        val isStationary = isStationaryImu || isGpsStationary || isStationaryShake
+        val isStationaryShake = hasAccel && !isCycling && eAcc >= autoPauseClassifier.activityType.eStopMps2 &&
+            dFiltered < 0.15 && dRaw < 0.20 && (gpsSpeed == null || gpsSpeed < 0.20f)
+        val isStationary = ((isStationaryImu && isGpsStationary) || isStationaryShake || (isGpsDopplerStationary && !hasMovementCadence)) &&
+            !(hasMovementCadence && (dFiltered >= 0.15 || dRaw >= 0.20 || baseSpeed >= 0.20))
 
         if (isStationary) {
             state[2] = 0.0

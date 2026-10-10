@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -345,10 +346,28 @@ private fun CelebratoryWorkoutHeader(
             .clip(cardShape)
             .background(colors.surface)
             .border(1.dp, colors.borderSubtle, cardShape)
-            .padding(14.dp)
     ) {
-        // Background animated celebration particles
-        Canvas(modifier = Modifier.matchParentSize()) {
+        // Subtle athletic hairline gradient accent harmonized with intro palette
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(2.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color(0xFF00F5D4), // Cyan
+                            Color(0xFF00FF87), // Lime
+                            Color(0xFF38BDF8), // Azure
+                            Color(0xFFF59E0B), // Amber
+                            Color(0xFFFF3B56)  // Crimson
+                        )
+                    )
+                )
+        )
+
+        Box(modifier = Modifier.padding(14.dp)) {
+            // Background animated celebration particles
+            Canvas(modifier = Modifier.matchParentSize()) {
             val cx = 28.dp.toPx()
             val cy = size.height / 2f
             val maxDistance = size.width * 0.7f
@@ -449,6 +468,7 @@ private fun CelebratoryWorkoutHeader(
             }
         }
     }
+}
 }
 
 /**

@@ -113,4 +113,60 @@ class AutoPauseClassifierTest {
         val energy = classifier.computeAccelerometerEnergy()
         assertThat(energy).isWithin(1e-3).of(1.0)
     }
+
+    @Test
+    fun testInitialStepDistanceCommittedImmediatelyFromInitializing() {
+        val classifier = AutoPauseClassifier(ActivityType.RUNNING)
+        assertThat(classifier.currentState).isEqualTo(MotionState.INITIALIZING)
+
+        // Add 1 step cadence sample (acceleration energy > eStop)
+        classifier.addAccelerationSample(0f, 0f, 11.5f, 1000L)
+        classifier.addAccelerationSample(0f, 0f, 8.0f, 1020L)
+
+        // Very first step: runner moves 0.35m at 0.35 m/s
+        val res = classifier.update(
+            vHorizMps = 0.35,
+            dtSeconds = 1.0,
+            incrementalDistanceMeters = 0.35,
+            gpsAccuracyMeters = 5.0f
+        )
+
+        assertThat(res.currentState).isEqualTo(MotionState.MOVING)
+        assertThat(res.stateChanged).isTrue()
+        assertThat(res.committedDistanceMeters).isWithin(1e-4).of(0.35)
+        assertThat(res.committedDurationMs).isEqualTo(1000L)
+    }
+
+    @Test
+    fun testCyclingMotionOnsetFromStoppedDoesNotDeadlockOnLowCadence() {
+        val classifier = AutoPauseClassifier(ActivityType.CYCLING)
+        classifier.setState(MotionState.STOPPED)
+
+        // Low accelerometer vibration typical on smooth asphalt
+        classifier.addAccelerationSample(0f, 0f, 9.85f, 1000L)
+
+        // Bike starts moving at 1.2 m/s (> vStop of 1.10 m/s) with 1.2m displacement
+        val res1 = classifier.update(
+            vHorizMps = 1.2,
+            dtSeconds = 1.0,
+            incrementalDistanceMeters = 1.2,
+            gpsAccuracyMeters = 4.0f
+        )
+
+        // Must enter POSSIBLY_MOVING debounce, buffering distance
+        assertThat(res1.currentState).isEqualTo(MotionState.POSSIBLY_MOVING)
+        assertThat(classifier.pendingMoveDistance).isWithin(1e-4).of(1.2)
+
+        // Sustained cycling for another 1.0s (> tMoveDebounce 1.5s)
+        val res2 = classifier.update(
+            vHorizMps = 1.3,
+            dtSeconds = 1.0,
+            incrementalDistanceMeters = 1.3,
+            gpsAccuracyMeters = 4.0f
+        )
+
+        assertThat(res2.currentState).isEqualTo(MotionState.MOVING)
+        // Must commit all buffered distance (1.2 + 1.3 = 2.5m)
+        assertThat(res2.committedDistanceMeters).isWithin(1e-4).of(2.5)
+    }
 }

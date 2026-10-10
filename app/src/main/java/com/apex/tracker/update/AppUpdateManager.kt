@@ -43,8 +43,14 @@ class AppUpdateManager(
      * @param isManual When true (e.g. user tapped "Check Updates"), sets Checking/UpToDate/Error so user gets explicit feedback.
      *                 When false (e.g. background on launch/resume), stays silent unless a new update is Available.
      */
+    /**
+     * Checks GitHub API for the latest release using published timestamp / release ID.
+     * @param currentBuildTimestampMs Epoch milliseconds of the current build (from BuildConfig.BUILD_TIME_MILLIS).
+     * @param isManual When true, gives explicit feedback (Checking/UpToDate/Error).
+     *                 When false, stays silent unless a new update is Available.
+     */
     suspend fun checkForUpdates(
-        currentVersion: String,
+        currentBuildTimestampMs: Long = com.apex.tracker.BuildConfig.BUILD_TIME_MILLIS,
         isManual: Boolean = false
     ): UpdateInfo? = withContext(Dispatchers.IO) {
         _isManualCheck.value = isManual
@@ -60,7 +66,7 @@ class AppUpdateManager(
 
             if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
                 if (isManual) {
-                    _status.value = UpdateStatus.UpToDate(currentVersion)
+                    _status.value = UpdateStatus.UpToDate("")
                 } else {
                     _status.value = UpdateStatus.Idle
                 }
@@ -77,6 +83,8 @@ class AppUpdateManager(
             val tagName = json.optString("tag_name", "").trim()
             val releaseTitle = json.optString("name", tagName)
             val releaseNotes = json.optString("body", "").trim()
+            val publishedAt = json.optString("published_at", "").trim()
+            val releaseId = json.optLong("id", 0L)
             val assets = json.optJSONArray("assets")
 
             var apkDownloadUrl = ""
@@ -96,9 +104,17 @@ class AppUpdateManager(
                 }
             }
 
-            if (apkDownloadUrl.isNotEmpty() && isNewerVersion(tagName, currentVersion)) {
+            val isAvailable = apkDownloadUrl.isNotEmpty() && isNewerRelease(
+                publishedAtIso = publishedAt,
+                currentBuildTimeMillis = currentBuildTimestampMs,
+                releaseId = releaseId,
+                releaseTag = tagName,
+                currentReleaseTag = com.apex.tracker.BuildConfig.RELEASE_TAG
+            )
+
+            if (isAvailable) {
                 val info = UpdateInfo(
-                    versionName = tagName,
+                    versionName = tagName.ifBlank { releaseTitle },
                     releaseTitle = releaseTitle,
                     releaseNotes = releaseNotes,
                     downloadUrl = apkDownloadUrl,
@@ -108,7 +124,7 @@ class AppUpdateManager(
                 return@withContext info
             } else {
                 if (isManual) {
-                    _status.value = UpdateStatus.UpToDate(currentVersion)
+                    _status.value = UpdateStatus.UpToDate(tagName.ifBlank { "Latest" })
                 } else {
                     _status.value = UpdateStatus.Idle
                 }
@@ -123,6 +139,17 @@ class AppUpdateManager(
             return@withContext null
         }
     }
+
+    /**
+     * Backward-compatible overload for checking updates.
+     */
+    suspend fun checkForUpdates(
+        currentVersion: String,
+        isManual: Boolean = false
+    ): UpdateInfo? = checkForUpdates(
+        currentBuildTimestampMs = com.apex.tracker.BuildConfig.BUILD_TIME_MILLIS,
+        isManual = isManual
+    )
 
     /**
      * Downloads the APK file to cache with real-time byte tracking and launches installation.
@@ -261,26 +288,60 @@ class AppUpdateManager(
 
     companion object {
         /**
-         * Compares two semantic version strings (e.g. "v1.0.1" vs "1.0.0").
-         * Returns true if [latestVersion] is strictly greater than [currentVersion].
+         * Parses an ISO-8601 UTC timestamp string (e.g. "2026-10-10T16:00:00Z") to epoch milliseconds.
          */
-        fun isNewerVersion(latestVersion: String, currentVersion: String): Boolean {
-            val cleanLatest = latestVersion.trim().removePrefix("v").removePrefix("V")
-            val cleanCurrent = currentVersion.trim().removePrefix("v").removePrefix("V")
-
-            val latestTokens = cleanLatest.split(".", "-", "_").mapNotNull { it.toIntOrNull() }
-            val currentTokens = cleanCurrent.split(".", "-", "_").mapNotNull { it.toIntOrNull() }
-
-            if (latestTokens.isEmpty() || currentTokens.isEmpty()) {
-                return cleanLatest != cleanCurrent && cleanLatest.isNotBlank()
+        fun parsePublishedAtToEpochMs(isoTimestamp: String): Long {
+            if (isoTimestamp.isBlank()) return 0L
+            val trimmed = isoTimestamp.trim().replace(' ', 'T')
+            return try {
+                try {
+                    java.time.OffsetDateTime.parse(trimmed).toInstant().toEpochMilli()
+                } catch (_: Exception) {
+                    try {
+                        java.time.Instant.parse(trimmed).toEpochMilli()
+                    } catch (_: Exception) {
+                        try {
+                            java.time.LocalDateTime.parse(trimmed).toInstant(java.time.ZoneOffset.UTC).toEpochMilli()
+                        } catch (_: Exception) {
+                            val sdfFallback = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).apply {
+                                timeZone = java.util.TimeZone.getTimeZone("UTC")
+                            }
+                            val clean = trimmed.removeSuffix("Z").substringBefore('.')
+                            sdfFallback.parse(clean)?.time ?: 0L
+                        }
+                    }
+                }
+            } catch (_: Exception) {
+                0L
             }
+        }
 
-            val maxLen = maxOf(latestTokens.size, currentTokens.size)
-            for (i in 0 until maxLen) {
-                val l = latestTokens.getOrElse(i) { 0 }
-                val c = currentTokens.getOrElse(i) { 0 }
-                if (l > c) return true
-                if (l < c) return false
+        /**
+         * Determines if a release is newer than the current installation using publication timestamp
+         * or release ID, completely free from semver version strings.
+         */
+        fun isNewerRelease(
+            publishedAtIso: String,
+            currentBuildTimeMillis: Long,
+            releaseId: Long = 0L,
+            installedReleaseId: Long = 0L,
+            releaseTag: String = "",
+            currentReleaseTag: String = ""
+        ): Boolean {
+            if (releaseTag.isNotBlank() && currentReleaseTag.isNotBlank() &&
+                releaseTag.trim().equals(currentReleaseTag.trim(), ignoreCase = true)
+            ) {
+                return false
+            }
+            if (releaseId > 0L && installedReleaseId > 0L) {
+                return releaseId > installedReleaseId
+            }
+            val releaseTime = parsePublishedAtToEpochMs(publishedAtIso)
+            if (releaseTime > 0L && currentBuildTimeMillis > 0L) {
+                return releaseTime > currentBuildTimeMillis
+            }
+            if (releaseTime > 0L && currentBuildTimeMillis <= 0L) {
+                return true
             }
             return false
         }

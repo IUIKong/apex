@@ -6,47 +6,98 @@ import org.junit.Test
 class AppUpdateManagerTest {
 
     @Test
-    fun isNewerVersion_greaterPatch_returnsTrue() {
-        assertThat(AppUpdateManager.isNewerVersion("v1.0.1", "1.0.0")).isTrue()
-        assertThat(AppUpdateManager.isNewerVersion("1.0.1", "1.0.0")).isTrue()
+    fun parsePublishedAtToEpochMs_validIsoString_returnsEpochMs() {
+        val iso = "2026-10-10T16:00:00Z"
+        val epochMs = AppUpdateManager.parsePublishedAtToEpochMs(iso)
+        assertThat(epochMs).isGreaterThan(0L)
+        // 2026-10-10T16:00:00Z = 1791648000000L
+        assertThat(epochMs).isEqualTo(1791648000000L)
     }
 
     @Test
-    fun isNewerVersion_greaterMinor_returnsTrue() {
-        assertThat(AppUpdateManager.isNewerVersion("v1.1.0", "1.0.9")).isTrue()
-        assertThat(AppUpdateManager.isNewerVersion("1.2.0", "1.1.5")).isTrue()
+    fun parsePublishedAtToEpochMs_invalidOrBlank_returnsZero() {
+        assertThat(AppUpdateManager.parsePublishedAtToEpochMs("")).isEqualTo(0L)
+        assertThat(AppUpdateManager.parsePublishedAtToEpochMs("   ")).isEqualTo(0L)
+        assertThat(AppUpdateManager.parsePublishedAtToEpochMs("not-a-date")).isEqualTo(0L)
     }
 
     @Test
-    fun isNewerVersion_greaterMajor_returnsTrue() {
-        assertThat(AppUpdateManager.isNewerVersion("v2.0.0", "1.9.9")).isTrue()
-        assertThat(AppUpdateManager.isNewerVersion("3.0.0", "2.9.9")).isTrue()
+    fun isNewerRelease_newerTimestamp_returnsTrue() {
+        val releaseIso = "2026-10-10T16:00:00Z" // 1791648000000L
+        val olderBuildTime = 1791647000000L
+        assertThat(AppUpdateManager.isNewerRelease(releaseIso, olderBuildTime)).isTrue()
     }
 
     @Test
-    fun isNewerVersion_sameVersion_returnsFalse() {
-        assertThat(AppUpdateManager.isNewerVersion("v1.0.0", "1.0.0")).isFalse()
-        assertThat(AppUpdateManager.isNewerVersion("1.0.0", "1.0.0")).isFalse()
-        assertThat(AppUpdateManager.isNewerVersion("v1.2.3", "v1.2.3")).isFalse()
+    fun isNewerRelease_matchingReleaseTag_returnsFalse() {
+        val releaseIso = "2026-10-10T16:00:00Z"
+        val olderBuildTime = 1791647000000L
+        assertThat(
+            AppUpdateManager.isNewerRelease(
+                publishedAtIso = releaseIso,
+                currentBuildTimeMillis = olderBuildTime,
+                releaseTag = "v1",
+                currentReleaseTag = "v1"
+            )
+        ).isFalse()
+
+        // Case insensitivity
+        assertThat(
+            AppUpdateManager.isNewerRelease(
+                publishedAtIso = releaseIso,
+                currentBuildTimeMillis = olderBuildTime,
+                releaseTag = "V1",
+                currentReleaseTag = "v1"
+            )
+        ).isFalse()
+
+        // Different tag updates properly
+        assertThat(
+            AppUpdateManager.isNewerRelease(
+                publishedAtIso = releaseIso,
+                currentBuildTimeMillis = olderBuildTime,
+                releaseTag = "v2",
+                currentReleaseTag = "v1"
+            )
+        ).isTrue()
     }
 
     @Test
-    fun isNewerVersion_lowerVersion_returnsFalse() {
-        assertThat(AppUpdateManager.isNewerVersion("v0.9.9", "1.0.0")).isFalse()
-        assertThat(AppUpdateManager.isNewerVersion("1.0.0", "1.0.1")).isFalse()
-        assertThat(AppUpdateManager.isNewerVersion("1.1.0", "1.2.0")).isFalse()
+    fun isNewerRelease_olderOrEqualTimestamp_returnsFalse() {
+        val releaseIso = "2026-10-10T16:00:00Z" // 1791648000000L
+        val newerBuildTime = 1791649000000L
+        val equalBuildTime = 1791648000000L
+        assertThat(AppUpdateManager.isNewerRelease(releaseIso, newerBuildTime)).isFalse()
+        assertThat(AppUpdateManager.isNewerRelease(releaseIso, equalBuildTime)).isFalse()
     }
 
     @Test
-    fun isNewerVersion_multiPartSemver_handlesGracefully() {
-        assertThat(AppUpdateManager.isNewerVersion("v1.0.1.1", "1.0.1")).isTrue()
-        assertThat(AppUpdateManager.isNewerVersion("1.0.1", "1.0.1.1")).isFalse()
+    fun isNewerRelease_releaseIdComparison_takesPrecedence() {
+        val releaseIso = "2026-10-10T10:00:00Z"
+        val buildTime = 1791649000000L // Build time is newer, but release ID is higher
+        assertThat(
+            AppUpdateManager.isNewerRelease(
+                publishedAtIso = releaseIso,
+                currentBuildTimeMillis = buildTime,
+                releaseId = 200L,
+                installedReleaseId = 100L
+            )
+        ).isTrue()
+
+        assertThat(
+            AppUpdateManager.isNewerRelease(
+                publishedAtIso = releaseIso,
+                currentBuildTimeMillis = buildTime,
+                releaseId = 100L,
+                installedReleaseId = 200L
+            )
+        ).isFalse()
     }
 
     @Test
-    fun isNewerVersion_blankStrings_returnsFalse() {
-        assertThat(AppUpdateManager.isNewerVersion("", "1.0.0")).isFalse()
-        assertThat(AppUpdateManager.isNewerVersion("   ", "1.0.0")).isFalse()
+    fun isNewerRelease_blankOrZeroTimestamp_returnsFalse() {
+        assertThat(AppUpdateManager.isNewerRelease("", 1791648000000L)).isFalse()
+        assertThat(AppUpdateManager.isNewerRelease("invalid", 1791648000000L)).isFalse()
     }
 
     @Test
@@ -99,6 +150,29 @@ class AppUpdateManagerTest {
         assertThat(text).contains("• Theme Toggle: Added Settings switch")
         assertThat(text).contains("• Commit: f57eb79")
         assertThat(text).contains("• SHA256: 9B305E83470B1D5300E2086F8275D124ACD45BA788EE21EE9D1F2A5432B47387")
+    }
+
+    @Test
+    fun parsePublishedAtToEpochMs_timezoneOffsetsAndVariations() {
+        // UTC with Z
+        val utcZ = AppUpdateManager.parsePublishedAtToEpochMs("2026-10-10T16:00:00Z")
+        assertThat(utcZ).isEqualTo(1791648000000L)
+
+        // +00:00 offset
+        val utcOffset = AppUpdateManager.parsePublishedAtToEpochMs("2026-10-10T16:00:00+00:00")
+        assertThat(utcOffset).isEqualTo(1791648000000L)
+
+        // +05:30 offset (Indian Standard Time: 21:30 is 16:00 UTC)
+        val ist = AppUpdateManager.parsePublishedAtToEpochMs("2026-10-10T21:30:00+05:30")
+        assertThat(ist).isEqualTo(1791648000000L)
+
+        // Space separated date
+        val spaceSeparated = AppUpdateManager.parsePublishedAtToEpochMs("2026-10-10 16:00:00Z")
+        assertThat(spaceSeparated).isEqualTo(1791648000000L)
+
+        // Fractional seconds
+        val fractional = AppUpdateManager.parsePublishedAtToEpochMs("2026-10-10T16:00:00.000Z")
+        assertThat(fractional).isEqualTo(1791648000000L)
     }
 }
 

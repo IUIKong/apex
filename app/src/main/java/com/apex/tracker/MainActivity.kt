@@ -232,7 +232,7 @@ fun MainAppContent(
     LaunchedEffect(Unit) {
         AppSettings.isAudioFeedbackEnabled(context) // Initialize audio feedback flag
         if (AppSettings.isAutoCheckUpdatesEnabled(context)) {
-            updateManager.checkForUpdates(BuildConfig.VERSION_NAME, isManual = false)
+            updateManager.checkForUpdates(isManual = false)
         }
     }
 
@@ -327,7 +327,7 @@ fun MainAppContent(
                         updateStatus = updateStatus,
                         onCheckForUpdates = {
                             coroutineScope.launch {
-                                updateManager.checkForUpdates(BuildConfig.VERSION_NAME, isManual = true)
+                                updateManager.checkForUpdates(isManual = true)
                             }
                         },
                         onThemeChanged = { isDark ->
@@ -394,7 +394,7 @@ fun MainAppContent(
                                         },
                                         onCheckForUpdates = {
                                             coroutineScope.launch {
-                                                updateManager.checkForUpdates(BuildConfig.VERSION_NAME, isManual = true)
+                                                updateManager.checkForUpdates(isManual = true)
                                             }
                                         },
                                         updateStatus = updateStatus,

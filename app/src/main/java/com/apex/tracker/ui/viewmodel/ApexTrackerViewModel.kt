@@ -379,12 +379,15 @@ class ApexTrackerViewModel(application: Application) : AndroidViewModel(applicat
             } else if (lastPoint == null) {
                 true
             } else if (isStationary) {
-                false // Prevent GPS drift points while stationary
+                val d = com.apex.tracker.core.math.EnuProjection.haversineDistance(
+                    lastPoint.latitude, lastPoint.longitude, newPoint.latitude, newPoint.longitude
+                )
+                d >= 1.5 // Allow resumed motion if runner starts moving before FSM updates
             } else {
                 val d = com.apex.tracker.core.math.EnuProjection.haversineDistance(
                     lastPoint.latitude, lastPoint.longitude, newPoint.latitude, newPoint.longitude
                 )
-                d >= 0.8 || (fused.fsmState == com.apex.tracker.core.model.MotionState.MOVING && now - lastPoint.timestamp >= 2500L && d >= 0.25)
+                d >= 0.40 || (now - lastPoint.timestamp >= 1200L && d >= 0.20)
             }
 
             val nextTrackPoints: List<TrackPointDto>
@@ -392,7 +395,7 @@ class ApexTrackerViewModel(application: Application) : AndroidViewModel(applicat
                 if (shouldAdd && newPoint != null) {
                     trackPointsBuffer.add(newPoint)
                     nextTrackPoints = ArrayList(trackPointsBuffer)
-                } else if (trackPointsBuffer.isNotEmpty() && newPoint != null && !isStationary) {
+                } else if (trackPointsBuffer.size > 1 && newPoint != null && !isStationary) {
                     trackPointsBuffer[trackPointsBuffer.lastIndex] = newPoint
                     nextTrackPoints = ArrayList(trackPointsBuffer)
                 } else {

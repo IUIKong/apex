@@ -134,11 +134,21 @@ class AutoPauseClassifier(
         val isCycling = activityType == ActivityType.CYCLING
         val isSlowActivity = activityType == ActivityType.HIKING || activityType == ActivityType.WALKING
 
-        val cStill = (hasAccel && eAcc < eStop && safeV < vMove) || (safeV < vStop && (!hasAccel || eAcc < eStop))
+        val hasCadence = (hasAccel && eAcc >= eStop) || (isCycling && (safeV >= 0.35 || safeDist >= 0.25))
+        val cStill = if (isCycling) {
+            safeV < vStop
+        } else {
+            !hasCadence && (
+                (hasAccel && eAcc < eStop && safeV < vMove) ||
+                (safeV < vStop && (!hasAccel || eAcc < eStop))
+            )
+        }
         val cMotion = !cStill && (
             (safeV >= vMove && (isCycling || !hasAccel || eAcc >= eStop || safeV > 2.5)) ||
+            (isCycling && safeV >= vStop && safeAccuracy < 20.0f) ||
             (hasAccel && safeV >= vStop && eAcc >= eMove) ||
-            (isSlowActivity && safeV >= vStop && (!hasAccel || eAcc >= eStop) && safeAccuracy < 15.0f)
+            (isSlowActivity && safeV >= vStop && (!hasAccel || eAcc >= eStop) && safeAccuracy < 15.0f) ||
+            (hasCadence && (safeV >= 0.25 || safeDist >= 0.20))
         )
 
         var committedDistance = 0.0
@@ -148,17 +158,27 @@ class AutoPauseClassifier(
 
         when (currentState) {
             MotionState.INITIALIZING -> {
-                if (cMotion && safeAccuracy < 20.0f) {
+                pendingMoveDistance += safeDist
+                pendingMoveDurationMs += (safeDt * 1000.0).toLong()
+
+                val isInitialMotion = cMotion ||
+                    (safeV >= 0.25 && (hasCadence || isCycling || safeAccuracy < 20.0f)) ||
+                    (safeDist >= 0.20 && (hasAccel || isCycling || safeAccuracy < 15.0f))
+                if (isInitialMotion && safeAccuracy < 25.0f) {
                     currentState = MotionState.MOVING
                     stateChanged = true
-                    committedDistance = safeDist
-                    committedDurationMs = (safeDt * 1000.0).toLong()
+                    committedDistance = pendingMoveDistance
+                    committedDurationMs = pendingMoveDurationMs
+                    pendingMoveDistance = 0.0
+                    pendingMoveDurationMs = 0L
                     stopDebounceTimerSec = 0.0
                 } else if (cStill) {
                     stopDebounceTimerSec += safeDt
                     if (stopDebounceTimerSec >= tStopDebounce) {
                         currentState = MotionState.STOPPED
                         stateChanged = true
+                        pendingMoveDistance = 0.0
+                        pendingMoveDurationMs = 0L
                         stopDebounceTimerSec = 0.0
                     }
                 }

@@ -9,26 +9,26 @@
         android:pivotX="54"
         android:pivotY="54">
 
-        <!-- Outer Dynamic Apex Chevron Peak (Crisp White #FFFFFF) -->
+        <!-- Outer Dynamic Apex Mountain Chevron (Deep Espresso Onyx #1C1917) -->
         <path
-            android:fillColor="#FFFFFF"
-            android:pathData="M54,23 L78,56 L71,56 L54,35 L37,56 L30,56 Z" />
+            android:fillColor="#1C1917"
+            android:pathData="M54,24 L80,62 L71,62 L54,37 L37,62 L28,62 Z" />
 
-        <!-- Inner Aerodynamic Chevron (Electric Cyan #00F5D4) -->
+        <!-- Inner Aerodynamic Chevron (Terracotta Flame #D9531E) -->
+        <path
+            android:fillColor="#D9531E"
+            android:pathData="M54,41 L71,66 L64,66 L54,52 L44,66 L37,66 Z" />
+
+        <!-- Forward-Propelling Velocity Beacon Dot (Electric Cyan #00F5D4) -->
         <path
             android:fillColor="#00F5D4"
-            android:pathData="M54,38 L72,65 L66,65 L54,49 L42,65 L36,65 Z" />
+            android:pathData="M54,69 C56.2,69 58,70.8 58,73 C58,75.2 56.2,77 54,77 C51.8,77 50,75.2 50,73 C50,70.8 51.8,69 54,69 Z" />
 
-        <!-- Forward-Propelling Runner Velocity Beacon Dot (Electric Lime #00FF87) -->
+        <!-- Precision Athletic Baseline Rule (Deep Espresso Onyx #1C1917) -->
         <path
-            android:fillColor="#00FF87"
-            android:pathData="M54,67 C56.2,67 58,68.8 58,71 C58,73.2 56.2,75 54,75 C51.8,75 50,73.2 50,71 C50,68.8 51.8,67 54,67 Z" />
-
-        <!-- Ground Horizon Baseline Rule (Platinum #F1F5F9) -->
-        <path
-            android:strokeColor="#F1F5F9"
+            android:strokeColor="#1C1917"
             android:strokeWidth="2.2"
             android:strokeLineCap="round"
-            android:pathData="M36,82 L72,82" />
+            android:pathData="M36,83 L72,83" />
     </group>
 </vector>

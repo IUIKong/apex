@@ -13,8 +13,13 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,6 +33,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -127,12 +133,13 @@ fun ApexSplashIntroScreen(
         }
 
         // =========================================================================
-        // STRICT "R U N" TYPOGRAPHY (ONLY R U N)
-        // Big, bold, italic athletic typography centered over the full-screen canvas
+        // STRICT "R U N" TYPOGRAPHY & ENERGETIC ORB
+        // Geometrically and virtually centered vertically and horizontally across all aspect ratios
         // =========================================================================
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
                 .graphicsLayer {
                     alpha = contentAlpha.value
                     scaleX = contentScale.value
@@ -140,6 +147,35 @@ fun ApexSplashIntroScreen(
                 },
             contentAlignment = Alignment.Center
         ) {
+            // Energetic pulsing & bouncing athletic orb glow geometrically centered behind typography
+            val orbBounce = sin(gradientPhase * 6.28318f)
+            val orbBounceY = sin(gradientPhase * 6.28318f * 2f)
+            Box(
+                modifier = Modifier
+                    .size(200.dp)
+                    .graphicsLayer {
+                        val s = 1f + 0.12f * orbBounce
+                        scaleX = s
+                        scaleY = s
+                        translationY = (-6f) * orbBounceY
+                    }
+                    .background(
+                        brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                            colors = listOf(
+                                Color(0x6600F5D4), // Soft Electric Cyan glow
+                                Color(0x3300FF87), // Soft Electric Lime glow
+                                Color(0x1838BDF8), // Sky Azure hint
+                                Color(0x00000000)
+                            )
+                        ),
+                        shape = androidx.compose.foundation.shape.CircleShape
+                    )
+            )
+
+            // Strictly centered "R U N" typography:
+            // Compensate for 22sp trailing letter-spacing after 'N' (+11.sp converted to Dp) and capital font descent (-3.dp)
+            val density = LocalDensity.current
+            val textOffsetX = with(density) { 11.sp.toDp() }
             Text(
                 text = "R U N",
                 color = Color(0xFFFFFFFF),
@@ -149,7 +185,7 @@ fun ApexSplashIntroScreen(
                 fontSize = 76.sp,
                 letterSpacing = 22.sp,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(start = 22.dp) // Optical center balance for tracked italic letters
+                modifier = Modifier.offset(x = textOffsetX, y = (-3).dp)
             )
         }
     }

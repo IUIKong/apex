@@ -397,9 +397,28 @@ private fun MonthlyOverviewBento(
                 .clip(cardShape)
                 .background(colors.surface)
                 .border(1.dp, colors.borderSubtle, cardShape)
-                .padding(16.dp)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            // Subtle athletic hairline gradient accent harmonized with intro palette
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(2.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                Color(0xFF00F5D4), // Cyan
+                                Color(0xFF00FF87), // Lime
+                                Color(0xFF38BDF8), // Azure
+                                Color(0xFFF59E0B), // Amber
+                                Color(0xFFFF3B56)  // Crimson
+                            )
+                        )
+                    )
+            )
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,

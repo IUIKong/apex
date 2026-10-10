@@ -253,4 +253,28 @@ class EkfStateEstimatorTest {
         assertThat(fused.lon.isNaN()).isFalse()
         assertThat(fused.speedMps.isNaN()).isFalse()
     }
+
+    @Test
+    fun testInitialGpsDisplacementWithoutDopplerSpeedAccumulatesDistanceImmediately() {
+        val ekf = EkfStateEstimator()
+        ekf.initialize(originLat, originLon, originAlt, initialAccuracyMeters = 2.0f)
+
+        // Inject step cadence into accelerometer buffer (footstep impact)
+        ekf.updateImuAcceleration(0.0f, 0.0f, 11.5f, 1000L)
+        ekf.updateImuAcceleration(0.0f, 0.0f, 8.0f, 1020L)
+
+        // 1-second prediction step
+        ekf.predict(1.0, ActivityType.RUNNING, 0.0)
+
+        // Initial fix moves 0.40m North, but Doppler speed is NOT available (null)
+        val (firstStepLat, firstStepLon) = EnuProjection.inverse(0.0, 0.40, originLat, originLon)
+        val res = ekf.updateGpsPosition(firstStepLat, firstStepLon, accuracyMeters = 2.0f)
+
+        assertThat(res).isEqualTo(GpsUpdateResult.ACCEPTED)
+        val fused = ekf.getFusedState()
+        // Must immediately classify as MOVING and accumulate distance without delay
+        assertThat(fused.fsmState).isEqualTo(MotionState.MOVING)
+        assertThat(fused.acceptedDistance).isGreaterThan(0.20)
+        assertThat(fused.filteredDistance).isGreaterThan(0.20)
+    }
 }

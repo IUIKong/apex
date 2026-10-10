@@ -100,9 +100,6 @@ object WorkoutShareHelper {
         // 6. Main Telemetry Metrics Grid (2x2) (y = 712f to 1180f)
         drawMetricsGrid(canvas, margin, contentWidth, summary, isDark)
 
-        // 7. Footer: Minimal Apex Branding & Sub-meter Telemetry Badge
-        drawFooter(canvas, margin, contentWidth, summary, isDark)
-
         return bitmap
     }
 
@@ -591,39 +588,6 @@ object WorkoutShareHelper {
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
         }
         canvas.drawText(subtext, rect.left + 24f, rect.top + 188f, subtextPaint)
-    }
-
-    private fun drawFooter(
-        canvas: Canvas,
-        margin: Float,
-        contentWidth: Float,
-        summary: WorkoutSummaryUiState,
-        isDark: Boolean
-    ) {
-        val dividerY = 1216f
-        val dividerColor = if (isDark) 0xFF1B2433.toInt() else 0xFFE7E4DF.toInt()
-        val dividerPaint = Paint().apply {
-            color = dividerColor
-            strokeWidth = 1.5f
-            style = Paint.Style.STROKE
-        }
-        canvas.drawLine(margin, dividerY, margin + contentWidth, dividerY, dividerPaint)
-
-        // Footer Branding: Minimal, clean, and elegant
-        val footerTextColor = if (isDark) 0xFF94A3B8.toInt() else 0xFF78716C.toInt()
-        val footerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = footerTextColor
-            textSize = 18f
-            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-            textAlign = Paint.Align.CENTER
-            letterSpacing = 0.16f
-        }
-        canvas.drawText(
-            "APEX • ATHLETIC PERFORMANCE TRACKER",
-            CARD_WIDTH / 2f,
-            1280f,
-            footerPaint
-        )
     }
 
     /**

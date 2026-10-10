@@ -48,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
@@ -183,11 +184,6 @@ fun ApexLiveHudScreen(
                 )
             }
 
-            AtelierBrandHeader(
-                uiState = uiState,
-                onOpenSettings = onOpenSettings
-            )
-
             // 2. Map Canvas: Dedicated flexible container that expands to fill remaining space
             // Clean, responsive, uncluttered. Never overlaps or glitches into the metrics card below.
             Box(
@@ -203,6 +199,39 @@ fun ApexLiveHudScreen(
                     onToggleAutoFollow = onToggleAutoFollow,
                     modifier = Modifier.fillMaxSize()
                 )
+
+                // Settings icon overlay floating on top-right over map canvas
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(10.dp)
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(colors.surfaceElevated.copy(alpha = 0.94f))
+                        .border(
+                            1.dp,
+                            Brush.linearGradient(
+                                listOf(
+                                    Color(0xFF00F5D4).copy(alpha = 0.7f),
+                                    Color(0xFF00FF87).copy(alpha = 0.7f),
+                                    Color(0xFF38BDF8).copy(alpha = 0.7f)
+                                )
+                            ),
+                            CircleShape
+                        )
+                        .tactilePress(pressedScale = 0.90f) {
+                            ApexAudioFeedback.playClick(view)
+                            onOpenSettings()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Settings",
+                        tint = colors.textPrimary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
 
             // 3. Primary Telemetry Editorial Dashboard (Pace, Distance, Time, Elev, Avg)
@@ -306,115 +335,6 @@ fun ApexLiveHudScreen(
     }
 }
 
-/**
- * Luxury Atelier Brand Header Bar with dynamic GNSS lock beacon and activity badge.
- */
-@Composable
-private fun AtelierBrandHeader(
-    uiState: LiveHudUiState,
-    onOpenSettings: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
-) {
-    val colors = ApexTheme.colors
-    val typography = ApexTheme.typography
-    val pillShape = remember { RoundedCornerShape(ApexDimens.RadiusPillFull) }
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            ApexLogoMark(size = 24.dp)
-            Text(
-                text = "APEX",
-                style = typography.Headline.copy(
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Black,
-                    color = colors.textPrimary,
-                    letterSpacing = 2.sp
-                )
-            )
-        }
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // GNSS Status Pill
-            val isGpsActive = uiState.isLocationServicesEnabled && uiState.isLocationPermissionGranted
-            val hasGoodFix = isGpsActive && uiState.horizontalAccuracyMeters > 0f && uiState.horizontalAccuracyMeters < 35f
-            val gpsDotColor = if (hasGoodFix) colors.electricLime else colors.laserAmber
-            val gpsLabel = if (!isGpsActive) {
-                "NO GPS"
-            } else if (hasGoodFix) {
-                val accInt = uiState.horizontalAccuracyMeters.toInt()
-                if (accInt > 0) "GPS ±${accInt}m" else "GPS 3D"
-            } else {
-                "ACQUIRING"
-            }
-
-            Box(
-                modifier = Modifier
-                    .clip(pillShape)
-                    .background(colors.surfaceElevated)
-                    .border(1.dp, colors.borderSubtle, pillShape)
-                    .padding(horizontal = 8.dp, vertical = 3.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .clip(CircleShape)
-                            .background(gpsDotColor)
-                    )
-                    Text(
-                        text = gpsLabel,
-                        style = typography.TelemetryMicro.copy(
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = colors.textPrimary,
-                            letterSpacing = 0.5.sp
-                        )
-                    )
-                }
-            }
-
-            // Settings Gear Icon Button
-            if (onOpenSettings != null) {
-                val view = LocalView.current
-                Box(
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(CircleShape)
-                        .background(colors.surfaceElevated)
-                        .border(1.dp, colors.borderSubtle, CircleShape)
-                        .tactilePress(pressedScale = 0.90f) {
-                            ApexAudioFeedback.playClick(view)
-                            onOpenSettings()
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = "Settings",
-                        tint = colors.slateSubtle,
-                        modifier = Modifier.size(15.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
 
 /**
  * Editorial Telemetry Dashboard: generous proportions, crisp monospace numerals,
@@ -462,9 +382,29 @@ private fun EditorialMetricsDashboard(
             .clip(cardShape)
             .background(colors.surfaceElevated)
             .border(1.dp, colors.borderSubtle, cardShape)
-            .padding(12.dp)
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+        // Subtle athletic hairline gradient accent harmonized with intro palette
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(2.dp)
+                .background(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(
+                            Color(0x3300F5D4),
+                            Color(0x3300FF87),
+                            Color(0x40D9531E),
+                            Color(0x2638BDF8)
+                        )
+                    )
+                )
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+        ) {
             // Row 1: Primary Metrics (Glanceable Pace & Distance)
             Row(
                 modifier = Modifier.fillMaxWidth(),
