@@ -2,14 +2,22 @@ package com.apex.tracker.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -30,6 +38,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalView
+import com.apex.tracker.ui.sound.ApexAudioFeedback
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -53,6 +63,7 @@ fun SlideToLockGuard(
     onLockChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val view = LocalView.current
     val colors = ApexTheme.colors
     val typography = ApexTheme.typography
 
@@ -70,6 +81,25 @@ fun SlideToLockGuard(
     )
 
     val pillShape = remember { RoundedCornerShape(ApexDimens.RadiusPillFull) }
+
+    // Subtle breathing shimmer for directional guide chevrons
+    val infiniteTransition = rememberInfiniteTransition(label = "slider_track_pulse")
+    val chevronAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 0.95f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "chevron_alpha"
+    )
+
+    val snapSpring = remember {
+        spring<Float>(
+            dampingRatio = 0.82f,
+            stiffness = Spring.StiffnessMediumLow
+        )
+    }
 
     BoxWithConstraints(
         modifier = modifier
@@ -97,25 +127,50 @@ fun SlideToLockGuard(
             if (!isDragging) {
                 val target = if (isLocked) maxOffsetPx else 0f
                 if (offsetAnimatable.targetValue != target || offsetAnimatable.value != target) {
-                    offsetAnimatable.animateTo(target, tween(200))
+                    offsetAnimatable.animateTo(target, snapSpring)
                 }
             }
         }
 
-        // Center track text
+        // Center track text with animated directional guidance
         Box(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = if (isLocked) "SLIDE TO UNLOCK" else "SLIDE TO LOCK CONTROLS",
-                style = typography.LabelUppercase.copy(
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isLocked) colors.laserAmber else colors.slateMuted,
-                    letterSpacing = 1.2.sp
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                if (isLocked) {
+                    Text(
+                        text = "‹ ‹ ‹  ",
+                        style = typography.LabelUppercase.copy(
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black,
+                            color = colors.laserAmber.copy(alpha = chevronAlpha)
+                        )
+                    )
+                }
+                Text(
+                    text = if (isLocked) "SLIDE TO UNLOCK" else "SLIDE TO LOCK CONTROLS",
+                    style = typography.LabelUppercase.copy(
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isLocked) colors.laserAmber else colors.slateMuted,
+                        letterSpacing = 1.2.sp
+                    )
                 )
-            )
+                if (!isLocked) {
+                    Text(
+                        text = "  › › ›",
+                        style = typography.LabelUppercase.copy(
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black,
+                            color = colors.slateMuted.copy(alpha = chevronAlpha)
+                        )
+                    )
+                }
+            }
         }
 
         // Draggable thumb pill
@@ -140,14 +195,16 @@ fun SlideToLockGuard(
                         isDragging = false
                         offsetAnimatable.snapTo(dragOffset)
                         if (!isLocked && dragOffset > maxOffsetPx * 0.65f) {
+                            ApexAudioFeedback.playClick(view)
                             onLockChanged(true)
-                            offsetAnimatable.animateTo(maxOffsetPx, tween(200))
+                            offsetAnimatable.animateTo(maxOffsetPx, snapSpring)
                         } else if (isLocked && dragOffset < maxOffsetPx * 0.35f) {
+                            ApexAudioFeedback.playClick(view)
                             onLockChanged(false)
-                            offsetAnimatable.animateTo(0f, tween(200))
+                            offsetAnimatable.animateTo(0f, snapSpring)
                         } else {
                             // Snap back to current lock state
-                            offsetAnimatable.animateTo(if (isLocked) maxOffsetPx else 0f, tween(200))
+                            offsetAnimatable.animateTo(if (isLocked) maxOffsetPx else 0f, snapSpring)
                         }
                     }
                 ),

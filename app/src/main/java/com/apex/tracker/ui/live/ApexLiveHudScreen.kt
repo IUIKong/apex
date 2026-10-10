@@ -1,7 +1,10 @@
 package com.apex.tracker.ui.live
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -177,7 +180,7 @@ fun ApexLiveHudScreen(
                 )
             }
 
-            AtelierBrandHeader()
+            AtelierBrandHeader(uiState = uiState)
 
             // 2. Map Canvas: Dedicated flexible container that expands to fill remaining space
             // Clean, responsive, uncluttered. Never overlaps or glitches into the metrics card below.
@@ -298,20 +301,22 @@ fun ApexLiveHudScreen(
 }
 
 /**
- * Luxury Atelier Brand Header Bar with dynamic GNSS lock beacon.
+ * Luxury Atelier Brand Header Bar with dynamic GNSS lock beacon and activity badge.
  */
 @Composable
 private fun AtelierBrandHeader(
+    uiState: LiveHudUiState,
     modifier: Modifier = Modifier
 ) {
     val colors = ApexTheme.colors
     val typography = ApexTheme.typography
+    val pillShape = remember { RoundedCornerShape(ApexDimens.RadiusPillFull) }
 
     Row(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 4.dp, vertical = 2.dp),
-        horizontalArrangement = Arrangement.Start,
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
@@ -328,6 +333,72 @@ private fun AtelierBrandHeader(
                     letterSpacing = 2.sp
                 )
             )
+        }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Sport Activity Chip
+            Box(
+                modifier = Modifier
+                    .clip(pillShape)
+                    .background(colors.surfaceElevated)
+                    .border(1.dp, colors.borderSubtle, pillShape)
+                    .padding(horizontal = 8.dp, vertical = 3.dp)
+            ) {
+                Text(
+                    text = uiState.activityType.uppercase(),
+                    style = typography.LabelMicro.copy(
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.slateSubtle,
+                        letterSpacing = 0.8.sp
+                    )
+                )
+            }
+
+            // GNSS Status Pill
+            val isGpsActive = uiState.isLocationServicesEnabled && uiState.isLocationPermissionGranted
+            val hasGoodFix = isGpsActive && uiState.horizontalAccuracyMeters > 0f && uiState.horizontalAccuracyMeters < 35f
+            val gpsDotColor = if (hasGoodFix) colors.electricLime else colors.laserAmber
+            val gpsLabel = if (!isGpsActive) {
+                "NO GPS"
+            } else if (hasGoodFix) {
+                val accInt = uiState.horizontalAccuracyMeters.toInt()
+                if (accInt > 0) "GPS ±${accInt}m" else "GPS 3D"
+            } else {
+                "ACQUIRING"
+            }
+
+            Box(
+                modifier = Modifier
+                    .clip(pillShape)
+                    .background(colors.surfaceElevated)
+                    .border(1.dp, colors.borderSubtle, pillShape)
+                    .padding(horizontal = 8.dp, vertical = 3.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(gpsDotColor)
+                    )
+                    Text(
+                        text = gpsLabel,
+                        style = typography.TelemetryMicro.copy(
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.textPrimary,
+                            letterSpacing = 0.5.sp
+                        )
+                    )
+                }
+            }
         }
     }
 }
@@ -496,7 +567,12 @@ private fun EditorialMetricsDashboard(
             HorizontalDivider(color = colors.borderSubtle, thickness = 0.75.dp)
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Row 2: Secondary Telemetry (Symmetrical 2-Column: Moving Time & Avg Pace)
+            // Row 2: Secondary Telemetry (Balanced 3-Column: Moving Time, Avg Speed, Avg Pace)
+            val avgSpeedKmh = if (state.movingTimeSeconds > 0) {
+                (state.acceptedDistanceMeters / state.movingTimeSeconds) * 3.6
+            } else 0.0
+            val avgSpeedFormatted = String.format(Locale.US, "%.1f", avgSpeedKmh)
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -521,7 +597,33 @@ private fun EditorialMetricsDashboard(
                     AnimatedNumeralTicker(
                         text = movingTimeFormatted,
                         style = typography.MetricMedium.copy(
-                            fontSize = 17.sp,
+                            fontSize = 16.sp,
+                            color = colors.textPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+
+                // AVG SPEED
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "AVG SPEED",
+                        style = typography.LabelMicro.copy(
+                            fontSize = 8.5.sp,
+                            color = colors.slateMuted,
+                            letterSpacing = 0.6.sp
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    AnimatedNumeralTicker(
+                        text = "$avgSpeedFormatted km/h",
+                        style = typography.MetricMedium.copy(
+                            fontSize = 16.sp,
                             color = colors.textPrimary,
                             fontWeight = FontWeight.Bold
                         )
@@ -547,7 +649,7 @@ private fun EditorialMetricsDashboard(
                     AnimatedNumeralTicker(
                         text = "$avgPaceFormatted /km",
                         style = typography.MetricMedium.copy(
-                            fontSize = 17.sp,
+                            fontSize = 16.sp,
                             color = colors.textPrimary,
                             fontWeight = FontWeight.Bold
                         )
@@ -701,8 +803,8 @@ private fun PreRunCountdownOverlay(
             AnimatedContent(
                 targetState = secondsRemaining,
                 transitionSpec = {
-                    (scaleIn(tween(220, easing = FastOutSlowInEasing)) + fadeIn(tween(160)))
-                        .togetherWith(scaleOut(tween(220, easing = FastOutSlowInEasing)) + fadeOut(tween(160)))
+                    (scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow), initialScale = 0.55f) + fadeIn(tween(140)))
+                        .togetherWith(scaleOut(tween(180, easing = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f)), targetScale = 1.35f) + fadeOut(tween(140)))
                 },
                 label = "countdown_ticker"
             ) { count ->

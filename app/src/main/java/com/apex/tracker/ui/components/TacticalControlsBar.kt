@@ -1,7 +1,11 @@
 package com.apex.tracker.ui.components
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -24,11 +28,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -56,6 +62,29 @@ fun TacticalControlsBar(
     val pauseIconShape = remember { RoundedCornerShape(1.dp) }
     val finishIconShape = remember { RoundedCornerShape(2.dp) }
 
+    // Kinetic breathing pulse for the start indicator in idle state
+    val infiniteTransition = rememberInfiniteTransition(label = "tactical_start_pulse")
+    val idleDotScale by infiniteTransition.animateFloat(
+        initialValue = 0.88f,
+        targetValue = 1.18f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(950, easing = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f)),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "idle_dot_scale"
+    )
+    val idleDotAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.72f,
+        targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(950, easing = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f)),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "idle_dot_alpha"
+    )
+
+    val luxuryEase = remember { CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f) }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -65,21 +94,21 @@ fun TacticalControlsBar(
             targetState = isRecording,
             transitionSpec = {
                 if (targetState) {
-                    (slideInVertically(tween(320, easing = FastOutSlowInEasing)) { it / 2 } + fadeIn(tween(260)))
+                    (slideInVertically(tween(340, easing = luxuryEase)) { it / 2 } + fadeIn(tween(260)))
                         .togetherWith(
-                            slideOutVertically(tween(260, easing = FastOutSlowInEasing)) { -it / 2 } + fadeOut(tween(200))
+                            slideOutVertically(tween(260, easing = luxuryEase)) { -it / 2 } + fadeOut(tween(200))
                         )
                 } else {
-                    (slideInVertically(tween(320, easing = FastOutSlowInEasing)) { -it / 2 } + fadeIn(tween(260)))
+                    (slideInVertically(tween(340, easing = luxuryEase)) { -it / 2 } + fadeIn(tween(260)))
                         .togetherWith(
-                            slideOutVertically(tween(260, easing = FastOutSlowInEasing)) { it / 2 } + fadeOut(tween(200))
+                            slideOutVertically(tween(260, easing = luxuryEase)) { it / 2 } + fadeOut(tween(200))
                         )
                 }
             },
             label = "tactical_controls_mode"
         ) { recording ->
             if (!recording) {
-                // Idle State: Deep Espresso / Runner Terracotta Start Button with tactile feedback
+                // Idle State: Deep Espresso Start Button with kinetic breathing beacon
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -103,6 +132,11 @@ fun TacticalControlsBar(
                         Box(
                             modifier = Modifier
                                 .size(9.dp)
+                                .graphicsLayer {
+                                    scaleX = idleDotScale
+                                    scaleY = idleDotScale
+                                    this.alpha = idleDotAlpha
+                                }
                                 .clip(CircleShape)
                                 .background(colors.punchyCrimson)
                         )
@@ -131,9 +165,9 @@ fun TacticalControlsBar(
                         AnimatedContent(
                             targetState = isPaused,
                             transitionSpec = {
-                                (slideInHorizontally(tween(260)) { if (targetState) it / 3 else -it / 3 } + fadeIn(tween(220)))
+                                (slideInHorizontally(tween(280, easing = luxuryEase)) { if (targetState) it / 3 else -it / 3 } + fadeIn(tween(220)))
                                     .togetherWith(
-                                        slideOutHorizontally(tween(220)) { if (targetState) -it / 3 else it / 3 } + fadeOut(tween(180))
+                                        slideOutHorizontally(tween(220, easing = luxuryEase)) { if (targetState) -it / 3 else it / 3 } + fadeOut(tween(180))
                                     )
                             },
                             label = "pause_resume_transition"

@@ -1,10 +1,16 @@
 package com.apex.tracker.ui.live
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -383,15 +389,21 @@ fun ParchmentMapCanvas(
         }
 
         // Floating RECENTER pill when map is manually panned/pinched
-        if (isUserInteracting) {
+        AnimatedVisibility(
+            visible = isUserInteracting,
+            enter = fadeIn(tween(220, easing = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f))) +
+                scaleIn(tween(220, easing = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f)), initialScale = 0.85f),
+            exit = fadeOut(tween(180)) + scaleOut(tween(180), targetScale = 0.85f),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(12.dp)
+        ) {
             val recenterShape = remember { RoundedCornerShape(16.dp) }
             Box(
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(12.dp)
                     .clip(recenterShape)
-                    .background(colors.surfaceElevated.copy(alpha = 0.92f))
-                    .border(1.dp, colors.electricCyan.copy(alpha = 0.6f), recenterShape)
+                    .background(colors.surfaceElevated.copy(alpha = 0.94f))
+                    .border(1.dp, colors.electricCyan.copy(alpha = 0.7f), recenterShape)
                     .clickable {
                         isUserInteracting = false
                         panOffsetX = 0f

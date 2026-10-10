@@ -66,85 +66,85 @@ data class MarvelFontFrame(
 private const val INTRO_DISPLAY_TEXT = "R U N"
 
 private val MARVEL_FONT_REEL = listOf(
-    // Frame 0: Luxury Editorial Serif Italic (Light)
+    // Frame 0: Luxury Editorial Serif Italic (Light) - Crisp Platinum White
     MarvelFontFrame(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.Light,
         fontStyle = FontStyle.Italic,
-        textColor = Color(0xFF1C1917),
-        accentColor = Color(0xFFD9531E),
+        textColor = Color(0xFFF8FAFC),
+        accentColor = Color(0xFF00F5D4),
         subLabel = "PRECISION KINEMATICS"
     ),
-    // Frame 1: High-Velocity Aerodynamic Sans Italic (Black)
+    // Frame 1: High-Velocity Aerodynamic Sans Italic (Black) - Electric Cyan
     MarvelFontFrame(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Black,
         fontStyle = FontStyle.Italic,
-        textColor = Color(0xFFD9531E),
-        accentColor = Color(0xFFD9531E),
+        textColor = Color(0xFF00F5D4),
+        accentColor = Color(0xFF00F5D4),
         subLabel = "VELOCITY STRIDE // 120HZ"
     ),
-    // Frame 2: Flowing Calligraphic Athletic Cursive Italic (Normal)
+    // Frame 2: Flowing Calligraphic Athletic Cursive Italic (Normal) - Electric Lime
     MarvelFontFrame(
         fontFamily = FontFamily.Cursive,
         fontWeight = FontWeight.Normal,
         fontStyle = FontStyle.Italic,
-        textColor = Color(0xFF1C1917),
-        accentColor = Color(0xFF2D6A4F),
+        textColor = Color(0xFF00FF87),
+        accentColor = Color(0xFF00FF87),
         subLabel = "ORGANIC MOTION CADENCE"
     ),
-    // Frame 3: Chrono Racing Telemetry Monospace Italic (Bold)
+    // Frame 3: Chrono Racing Telemetry Monospace Italic (Bold) - Laser Amber
     MarvelFontFrame(
         fontFamily = FontFamily.Monospace,
         fontWeight = FontWeight.Bold,
         fontStyle = FontStyle.Italic,
-        textColor = Color(0xFFD97706),
-        accentColor = Color(0xFFD97706),
+        textColor = Color(0xFFF59E0B),
+        accentColor = Color(0xFFF59E0B),
         subLabel = "GNSS SATELLITE LOCK"
     ),
-    // Frame 4: Classic Marathon Trophy Serif Italic (Bold)
+    // Frame 4: Classic Marathon Trophy Serif Italic (Bold) - Pure White
     MarvelFontFrame(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.Bold,
         fontStyle = FontStyle.Italic,
-        textColor = Color(0xFF1C1917),
+        textColor = Color(0xFFFFFFFF),
         accentColor = Color(0xFFD9531E),
         subLabel = "ENDURANCE PROTOCOL"
     ),
-    // Frame 5: Minimalist Aerofoil Sans Italic (Light)
+    // Frame 5: Minimalist Aerofoil Sans Italic (Light) - Sky Blue
     MarvelFontFrame(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Light,
         fontStyle = FontStyle.Italic,
-        textColor = Color(0xFF2D6A4F),
-        accentColor = Color(0xFF2D6A4F),
+        textColor = Color(0xFF38BDF8),
+        accentColor = Color(0xFF38BDF8),
         subLabel = "AERODYNAMIC PROFILE"
     ),
-    // Frame 6: Bold Flowing Cursive Italic (Bold)
+    // Frame 6: Bold Flowing Cursive Italic (Bold) - Coral Red
     MarvelFontFrame(
         fontFamily = FontFamily.Cursive,
         fontWeight = FontWeight.Bold,
         fontStyle = FontStyle.Italic,
-        textColor = Color(0xFFC2410C),
-        accentColor = Color(0xFFC2410C),
+        textColor = Color(0xFFFB7185),
+        accentColor = Color(0xFFFB7185),
         subLabel = "BIOMETRIC PULSE SYNC"
     ),
-    // Frame 7: Precision Split Monospace Italic (Medium)
+    // Frame 7: Precision Split Monospace Italic (Medium) - Solar Gold
     MarvelFontFrame(
         fontFamily = FontFamily.Monospace,
         fontWeight = FontWeight.Medium,
         fontStyle = FontStyle.Italic,
-        textColor = Color(0xFF1C1917),
-        accentColor = Color(0xFFD97706),
+        textColor = Color(0xFFFBBF24),
+        accentColor = Color(0xFFFBBF24),
         subLabel = "SUB-METER EKF FUSION"
     ),
-    // Frame 8: Championship Heavy Serif Italic (ExtraBold)
+    // Frame 8: Championship Heavy Serif Italic (ExtraBold) - Terracotta Blaze
     MarvelFontFrame(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.ExtraBold,
         fontStyle = FontStyle.Italic,
-        textColor = Color(0xFFD9531E),
-        accentColor = Color(0xFFD9531E),
+        textColor = Color(0xFFFF6B4A),
+        accentColor = Color(0xFFFF6B4A),
         subLabel = "CHAMPIONSHIP CIRCUIT"
     ),
     // Frame 9: Final Hero Marvel Lockup - Pure Athletic Apex Italic
@@ -152,7 +152,7 @@ private val MARVEL_FONT_REEL = listOf(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Black,
         fontStyle = FontStyle.Italic,
-        textColor = Color(0xFF1C1917),
+        textColor = Color(0xFFFFFFFF),
         accentColor = Color(0xFFD9531E),
         subLabel = "APEX ATHLETIC TRACKER"
     )
@@ -178,16 +178,24 @@ fun ApexSplashIntroScreen(
     val orbOffsetX = remember { Animatable(-1000f) }
     val orbScale = remember { Animatable(1f) }
     val orbAlpha = remember { Animatable(1f) }
+    val borderAlpha = remember { Animatable(1f) }
+    val bgTransition = remember { Animatable(0f) } // 0f = warm beige (#FBFBF9), 1f = cinematic black (#080B10)
     val reelAlpha = remember { Animatable(0f) }
     val reelScale = remember { Animatable(1f) }
     val heroAccentAlpha = remember { Animatable(0f) }
 
     var currentFrameIndex by remember { mutableIntStateOf(0) }
 
+    val currentBg = androidx.compose.ui.graphics.lerp(
+        Color(0xFFFBFBF9),
+        Color(0xFF080B10),
+        bgTransition.value
+    )
+
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFFFBFBF9)) // Warm Alabaster / Beige base canvas
+            .background(currentBg)
             .pointerInput(Unit) {
                 detectTapGestures {
                     onFinish() // Tap anywhere to skip instantly
@@ -199,45 +207,54 @@ fun ApexSplashIntroScreen(
 
         LaunchedEffect(Unit) {
             // Orb starts off-screen to the left
-            orbOffsetX.snapTo(-screenWidthPx * 0.85f)
+            orbOffsetX.snapTo(-screenWidthPx * 0.95f)
 
             // Phase 1: Orb bounces in smoothly from left to center (x = 0)
             orbOffsetX.animateTo(
                 targetValue = 0f,
                 animationSpec = spring(
-                    dampingRatio = 0.72f, // Silky smooth deceleration with gentle settling
-                    stiffness = 200f
+                    dampingRatio = 0.78f, // Silky smooth deceleration with gentle natural settling
+                    stiffness = 150f
                 )
             )
 
-            // Phase 2: Brief pause at center (100ms)
-            delay(100)
+            // Phase 2: Natural resting pause at center (160ms)
+            delay(160)
 
-            // Phase 3: Orb expands smoothly and buttery, dissolving into the beige canvas
+            // Phase 3: Orb expands smoothly and buttery, turning the entire screen into deep obsidian black
             launch {
-                orbAlpha.animateTo(
+                borderAlpha.animateTo(
                     targetValue = 0f,
                     animationSpec = tween(
-                        durationMillis = 450,
-                        easing = CubicBezierEasing(0.25f, 0.1f, 0.25f, 1.0f)
+                        durationMillis = 220,
+                        easing = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f)
+                    )
+                )
+            }
+            launch {
+                bgTransition.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(
+                        durationMillis = 800,
+                        easing = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f)
                     )
                 )
             }
             orbScale.animateTo(
-                targetValue = 30f,
+                targetValue = 55f, // Fully covers entire screen into solid black
                 animationSpec = tween(
-                    durationMillis = 480,
-                    easing = CubicBezierEasing(0.2f, 0.0f, 0.2f, 1.0f)
+                    durationMillis = 880,
+                    easing = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f)
                 )
             )
 
-            // Phase 4: Fade in text reel smoothly
-            reelAlpha.animateTo(1f, tween(150))
+            // Phase 4: Fade in Marvel text reel smoothly on the dark canvas
+            reelAlpha.animateTo(1f, tween(200))
 
-            // Flip through fancy italic font frames (140ms per frame for buttery smoothness)
+            // Flip through fancy italic font frames (135ms per frame for cinematic Marvel tempo)
             for (i in 0 until MARVEL_FONT_REEL.size - 1) {
                 currentFrameIndex = i
-                delay(140)
+                delay(135)
             }
 
             // Phase 5: Lock onto the final Marvel Hero frame
@@ -245,19 +262,19 @@ fun ApexSplashIntroScreen(
             ApexAudioFeedback.playClick(context)
 
             launch {
-                heroAccentAlpha.animateTo(1f, tween(200))
+                heroAccentAlpha.animateTo(1f, tween(260))
             }
-            reelScale.snapTo(1.04f)
+            reelScale.snapTo(1.05f)
             reelScale.animateTo(
                 targetValue = 1f,
-                animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = 300f)
+                animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = 280f)
             )
 
-            // Hold on the final hero lockup (550ms)
-            delay(550)
+            // Hold on the final hero lockup (700ms)
+            delay(700)
 
             // Phase 6: Smooth fade transition into main app
-            reelAlpha.animateTo(0f, tween(200))
+            reelAlpha.animateTo(0f, tween(240))
 
             onFinish()
         }
@@ -265,7 +282,7 @@ fun ApexSplashIntroScreen(
         // =========================================================================
         // BLACK ORB: Bounces to center from the left, then buttery iris expansion
         // =========================================================================
-        if (orbAlpha.value > 0.01f) {
+        if (bgTransition.value < 0.999f || orbScale.value < 50f) {
             val orbSizeDp = 76.dp
             Box(
                 modifier = Modifier
@@ -275,8 +292,16 @@ fun ApexSplashIntroScreen(
                     .size(orbSizeDp)
                     .graphicsLayer { alpha = orbAlpha.value }
                     .clip(CircleShape)
-                    .background(Color(0xFF1C1917)) // Deep Espresso Black orb
-                    .border(1.5.dp, Color(0xFFD9531E), CircleShape) // Runner Terracotta rim
+                    .background(Color(0xFF080B10)) // Pure Deep Obsidian Black orb
+                    .then(
+                        if (borderAlpha.value > 0.01f) {
+                            Modifier.border(
+                                1.5.dp,
+                                Color(0xFFD9531E).copy(alpha = borderAlpha.value),
+                                CircleShape
+                            )
+                        } else Modifier
+                    )
             )
         }
 
@@ -345,8 +370,8 @@ fun ApexSplashIntroScreen(
                             .width(260.dp)
                             .height(30.dp)
                             .clip(RoundedCornerShape(6.dp))
-                            .background(Color(0xFFF0EDE6))
-                            .border(1.dp, activeFrame.accentColor.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
+                            .background(Color(0xFF161D28))
+                            .border(1.dp, activeFrame.accentColor.copy(alpha = 0.6f), RoundedCornerShape(6.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(

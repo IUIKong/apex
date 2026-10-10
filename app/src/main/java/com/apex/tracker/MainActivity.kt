@@ -14,6 +14,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -111,8 +112,8 @@ class MainActivity : ComponentActivity() {
                 AnimatedContent(
                     targetState = showSplash,
                     transitionSpec = {
-                        fadeIn(tween(380, easing = FastOutSlowInEasing)) togetherWith
-                            fadeOut(tween(300, easing = FastOutSlowInEasing))
+                        fadeIn(tween(480, easing = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f))) togetherWith
+                            fadeOut(tween(380, easing = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f)))
                     },
                     label = "splash_to_main_app_transition"
                 ) { isSplash ->
@@ -214,15 +215,16 @@ fun MainAppContent(
             AnimatedContent(
                 targetState = viewingSummary,
                 transitionSpec = {
+                    val luxuryEase = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f)
                     if (targetState) {
-                        (slideInVertically(tween(360, easing = FastOutSlowInEasing)) { it } + fadeIn(tween(260)))
+                        (slideInVertically(tween(380, easing = luxuryEase)) { it / 2 } + fadeIn(tween(280, easing = luxuryEase)))
                             .togetherWith(
-                                slideOutVertically(tween(300, easing = FastOutSlowInEasing)) { -it / 3 } + fadeOut(tween(200))
+                                slideOutVertically(tween(320, easing = luxuryEase)) { -it / 3 } + fadeOut(tween(220, easing = luxuryEase))
                             )
                     } else {
-                        (slideInVertically(tween(360, easing = FastOutSlowInEasing)) { -it / 3 } + fadeIn(tween(260)))
+                        (slideInVertically(tween(380, easing = luxuryEase)) { -it / 3 } + fadeIn(tween(280, easing = luxuryEase)))
                             .togetherWith(
-                                slideOutVertically(tween(300, easing = FastOutSlowInEasing)) { it } + fadeOut(tween(200))
+                                slideOutVertically(tween(320, easing = luxuryEase)) { it / 2 } + fadeOut(tween(220, easing = luxuryEase))
                             )
                     }
                 },
@@ -247,16 +249,17 @@ fun MainAppContent(
                     AnimatedContent(
                         targetState = selectedTab,
                         transitionSpec = {
+                            val luxuryEase = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f)
                             val forward = targetState > initialState
                             if (forward) {
-                                (slideInHorizontally(tween(320, easing = FastOutSlowInEasing)) { it / 2 } + fadeIn(tween(240)))
+                                (slideInHorizontally(tween(340, easing = luxuryEase)) { it / 3 } + fadeIn(tween(260, easing = luxuryEase)))
                                     .togetherWith(
-                                        slideOutHorizontally(tween(280, easing = FastOutSlowInEasing)) { -it / 2 } + fadeOut(tween(200))
+                                        slideOutHorizontally(tween(300, easing = luxuryEase)) { -it / 3 } + fadeOut(tween(200, easing = luxuryEase))
                                     )
                             } else {
-                                (slideInHorizontally(tween(320, easing = FastOutSlowInEasing)) { -it / 2 } + fadeIn(tween(240)))
+                                (slideInHorizontally(tween(340, easing = luxuryEase)) { -it / 3 } + fadeIn(tween(260, easing = luxuryEase)))
                                     .togetherWith(
-                                        slideOutHorizontally(tween(280, easing = FastOutSlowInEasing)) { it / 2 } + fadeOut(tween(200))
+                                        slideOutHorizontally(tween(300, easing = luxuryEase)) { it / 3 } + fadeOut(tween(200, easing = luxuryEase))
                                     )
                             }
                         },
@@ -393,7 +396,7 @@ fun ApexBottomNavigationBar(
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = colors.surfaceElevated,
-        shadowElevation = 8.dp
+        shadowElevation = 0.dp
     ) {
         Column(
             modifier = Modifier
@@ -416,29 +419,26 @@ fun ApexBottomNavigationBar(
                 // Tab 0: LOGBOOK (Past activities & history)
                 val isLogbookSelected = selectedTabIndex == 0
                 val logbookColor = if (isLogbookSelected) colors.textPrimary else colors.slateMuted
-                val logbookDotScale by animateFloatAsState(
-                    targetValue = if (isLogbookSelected) 1f else 0f,
-                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
-                    label = "logbook_dot"
-                )
+
+                val navPillShape = remember { RoundedCornerShape(ApexDimens.RadiusPillFull) }
 
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight()
-                        .clip(RoundedCornerShape(ApexDimens.RadiusCardStandard))
-                        .tactilePress(pressedScale = 0.94f) {
+                        .height(52.dp)
+                        .clip(navPillShape)
+                        .background(if (isLogbookSelected) colors.surfaceHigh else Color.Transparent)
+                        .tactilePress(pressedScale = 0.95f) {
                             ApexAudioFeedback.playClick(view)
                             onTabSelected(0)
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         LogbookVectorIcon(color = logbookColor)
-                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "LOGBOOK",
                             style = typography.LabelUppercase.copy(
@@ -450,42 +450,30 @@ fun ApexBottomNavigationBar(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(4.dp)
-                                .clip(CircleShape)
-                                .background(colors.textPrimary.copy(alpha = logbookDotScale))
-                        )
                     }
                 }
 
                 // Tab 1: RECORD (Main live tracking cockpit)
                 val isRecordSelected = selectedTabIndex == 1
                 val recordColor = if (isRecordSelected) colors.textPrimary else colors.slateMuted
-                val recordDotScale by animateFloatAsState(
-                    targetValue = if (isRecordSelected) 1f else 0f,
-                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
-                    label = "record_dot"
-                )
 
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight()
-                        .clip(RoundedCornerShape(ApexDimens.RadiusCardStandard))
-                        .tactilePress(pressedScale = 0.94f) {
+                        .height(52.dp)
+                        .clip(navPillShape)
+                        .background(if (isRecordSelected) colors.surfaceHigh else Color.Transparent)
+                        .tactilePress(pressedScale = 0.95f) {
                             ApexAudioFeedback.playClick(view)
                             onTabSelected(1)
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        RecordVectorIcon(color = if (isRecordSelected) colors.punchyCrimson else recordColor)
-                        Spacer(modifier = Modifier.height(4.dp))
+                        RecordVectorIcon(color = if (isRecordSelected) colors.electricCyan else recordColor)
                         Text(
                             text = "RECORD",
                             style = typography.LabelUppercase.copy(
@@ -496,13 +484,6 @@ fun ApexBottomNavigationBar(
                             ),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(4.dp)
-                                .clip(CircleShape)
-                                .background(colors.punchyCrimson.copy(alpha = recordDotScale))
                         )
                     }
                 }
