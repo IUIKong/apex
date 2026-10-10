@@ -46,6 +46,7 @@ object AppSettings {
     private const val KEY_AUDIO_FEEDBACK = "key_audio_feedback"
     private const val KEY_DISTANCE_UNIT = "key_distance_unit"
     private const val KEY_SHOW_RAW_TRACE = "key_show_raw_trace"
+    private const val KEY_DARK_THEME = "key_dark_theme"
 
     const val INTRO_INTERVAL_MS = 7L * 24 * 60 * 60 * 1000L // 7 Days in milliseconds
 
@@ -126,5 +127,22 @@ object AppSettings {
     fun setShowRawTrace(context: Context, enabled: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putBoolean(KEY_SHOW_RAW_TRACE, enabled).apply()
+    }
+
+    /**
+     * Checks if the dark theme (OLED Obsidian) is selected.
+     * Defaults to false (Warm Alabaster Beige-White palette).
+     */
+    fun isDarkThemeEnabled(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_DARK_THEME, false)
+    }
+
+    /**
+     * Persists the user's theme selection.
+     */
+    fun setDarkThemeEnabled(context: Context, enabled: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_DARK_THEME, enabled).apply()
     }
 }

@@ -75,6 +75,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.apex.tracker.BuildConfig
 import com.apex.tracker.ui.components.tactilePress
@@ -123,6 +124,14 @@ class MainActivity : ComponentActivity() {
             val liveState by viewModel.liveHudState.collectAsStateWithLifecycle()
             val context = LocalContext.current
             var showSplash by remember { mutableStateOf(shouldShowIntro(context)) }
+
+            val view = LocalView.current
+            LaunchedEffect(liveState.isDarkTheme) {
+                val window = (view.context as? ComponentActivity)?.window ?: return@LaunchedEffect
+                val insetsController = WindowCompat.getInsetsController(window, view)
+                insetsController.isAppearanceLightStatusBars = !liveState.isDarkTheme
+                insetsController.isAppearanceLightNavigationBars = !liveState.isDarkTheme
+            }
 
             ApexTheme(isDark = liveState.isDarkTheme) {
                 AnimatedContent(
@@ -320,6 +329,9 @@ fun MainAppContent(
                             coroutineScope.launch {
                                 updateManager.checkForUpdates(BuildConfig.VERSION_NAME, isManual = true)
                             }
+                        },
+                        onThemeChanged = { isDark ->
+                            viewModel.setTheme(isDark)
                         }
                     )
                 } else {

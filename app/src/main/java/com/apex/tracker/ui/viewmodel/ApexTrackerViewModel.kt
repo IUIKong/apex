@@ -21,6 +21,7 @@ import com.apex.tracker.database.TrackPointEntity
 import com.apex.tracker.database.WorkoutEntity
 import com.apex.tracker.sensor.LocationAvailabilityManager
 import com.apex.tracker.service.TrackingForegroundService
+import com.apex.tracker.ui.settings.AppSettings
 import com.apex.tracker.ui.state.DiagnosticsUiState
 import com.apex.tracker.ui.state.LiveHudUiState
 import com.apex.tracker.ui.state.SplitDto
@@ -73,6 +74,9 @@ class ApexTrackerViewModel(application: Application) : AndroidViewModel(applicat
     private val trackPointsBuffer = ArrayList<TrackPointDto>()
 
     init {
+        val initialDark = AppSettings.isDarkThemeEnabled(application)
+        _isDarkTheme.value = initialDark
+        _liveHudState.update { it.copy(isDarkTheme = initialDark) }
         initHardwareDiagnostics()
         observeTrackingService()
         observeWorkoutsHistory()

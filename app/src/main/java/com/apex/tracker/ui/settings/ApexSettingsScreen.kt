@@ -66,6 +66,7 @@ fun ApexSettingsScreen(
     onNavigateBack: () -> Unit,
     updateStatus: UpdateStatus = UpdateStatus.Idle,
     onCheckForUpdates: () -> Unit = {},
+    onThemeChanged: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -75,6 +76,9 @@ fun ApexSettingsScreen(
     val scrollState = rememberScrollState()
 
     // Preferences states
+    var isDarkTheme by remember {
+        mutableStateOf(AppSettings.isDarkThemeEnabled(context))
+    }
     var introFrequency by remember {
         mutableStateOf(AppSettings.getIntroFrequency(context))
     }
@@ -156,8 +160,55 @@ fun ApexSettingsScreen(
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 1. Section: Intro Animation
+            // 1. Section: Theme & Intro Animation
             SettingsSectionHeader(title = "PRESENTATION & LAUNCH")
+
+            // Theme Selection Slider Card
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(cardShape)
+                    .background(colors.surface)
+                    .border(1.dp, colors.borderSubtle, cardShape)
+                    .padding(14.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "COLOR SCHEME & THEME",
+                        style = typography.LabelMicro.copy(
+                            fontWeight = FontWeight.Black,
+                            color = colors.electricCyan,
+                            letterSpacing = 1.sp
+                        )
+                    )
+                    Text(
+                        text = "Choose between the default Atelier Beige-White aesthetic and the OLED Obsidian dark cockpit.",
+                        style = typography.BodyText.copy(
+                            fontSize = 12.sp,
+                            color = colors.slateSubtle,
+                            lineHeight = 16.sp
+                        )
+                    )
+
+                    val themeOptions = remember {
+                        listOf("BEIGE-WHITE (DEFAULT)", "OLED OBSIDIAN")
+                    }
+                    val currentThemeIndex = if (isDarkTheme) 1 else 0
+
+                    ApexSmoothSegmentedSlider(
+                        options = themeOptions,
+                        selectedIndex = currentThemeIndex,
+                        onOptionSelected = { index ->
+                            val newDark = (index == 1)
+                            if (isDarkTheme != newDark) {
+                                isDarkTheme = newDark
+                                AppSettings.setDarkThemeEnabled(context, newDark)
+                                onThemeChanged(newDark)
+                            }
+                        }
+                    )
+                }
+            }
 
             Box(
                 modifier = Modifier
