@@ -24,10 +24,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -87,48 +84,11 @@ fun ApexWorkoutsHistoryScreen(
         modifier = modifier
             .fillMaxSize()
             .background(ApexTheme.colors.canvasBackground)
-            .padding(horizontal = 16.dp)
+            .padding(16.dp)
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Sleek Minimal Top Bar: Settings Action Only (Logo and top elements removed)
-        if (onOpenSettings != null) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(ApexTheme.colors.surfaceElevated)
-                        .border(1.dp, ApexTheme.colors.borderSubtle, CircleShape)
-                        .tactilePress(pressedScale = 0.90f) {
-                            ApexAudioFeedback.playClick(view)
-                            onOpenSettings()
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = "Settings",
-                        tint = ApexTheme.colors.slateSubtle,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-        }
-
         if (workouts.isEmpty()) {
-            Spacer(modifier = Modifier.height(16.dp))
-            EmptyWorkoutsCard(modifier = Modifier.weight(1f))
-            Spacer(modifier = Modifier.height(16.dp))
+            EmptyWorkoutsCard(modifier = Modifier.fillMaxSize())
         } else {
-            Spacer(modifier = Modifier.height(16.dp))
-
             // Weekly Volume Summary Card
             WeeklySummaryCard(
                 totalDistanceKm = totalDistanceMeters / 1000.0,

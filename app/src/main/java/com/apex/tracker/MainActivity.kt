@@ -109,6 +109,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         window.setBackgroundDrawableResource(R.color.canvas_background)
         requestRequiredPermissions()
+        AppUpdateManager.cleanupDownloadedApks(applicationContext)
 
         setContent {
             val liveState by viewModel.liveHudState.collectAsStateWithLifecycle()

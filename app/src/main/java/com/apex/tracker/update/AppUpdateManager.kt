@@ -131,6 +131,7 @@ class AppUpdateManager(
         context: Context,
         updateInfo: UpdateInfo
     ) = withContext(Dispatchers.IO) {
+        cleanupDownloadedApks(context)
         val updatesDir = File(context.cacheDir, "updates").apply { mkdirs() }
         val apkFile = File(updatesDir, "apex_${updateInfo.versionName.replace(".", "_")}.apk")
 
@@ -282,6 +283,23 @@ class AppUpdateManager(
                 if (l < c) return false
             }
             return false
+        }
+
+        /**
+         * Purges all downloaded update APK files from cache.
+         * Triggered on app startup, package replacement, and before downloading updates.
+         */
+        fun cleanupDownloadedApks(context: Context) {
+            try {
+                val updatesDir = File(context.cacheDir, "updates")
+                if (updatesDir.exists() && updatesDir.isDirectory) {
+                    updatesDir.listFiles()?.forEach { file ->
+                        if (file.name.endsWith(".apk", ignoreCase = true)) {
+                            file.delete()
+                        }
+                    }
+                }
+            } catch (_: Exception) {}
         }
     }
 }

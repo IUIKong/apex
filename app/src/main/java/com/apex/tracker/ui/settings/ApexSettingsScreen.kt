@@ -557,7 +557,7 @@ fun ApexSettingsScreen(
                                 )
                             )
                             Text(
-                                text = "VERSION ${BuildConfig.VERSION_NAME} (BUILD 4)",
+                                text = "VERSION ${BuildConfig.VERSION_NAME} (BUILD ${BuildConfig.VERSION_CODE})",
                                 style = typography.LabelMicro.copy(
                                     color = colors.electricCyan,
                                     fontWeight = FontWeight.Bold
