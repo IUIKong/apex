@@ -67,11 +67,23 @@ import java.util.Locale
 fun AppUpdateDialog(
     status: UpdateStatus,
     currentVersion: String,
+    isManualCheck: Boolean = false,
     onStartUpdateClick: (UpdateInfo) -> Unit,
     onInstallClick: (File) -> Unit,
     onDismissRequest: () -> Unit
 ) {
     if (status is UpdateStatus.Idle) return
+
+    // Under auto-check, ONLY show pop-up dialog if an update is available (or actively downloading / installing).
+    // Never show "Checking...", "UpToDate", or "Error" pop-up dialogs during automated background checks.
+    if (!isManualCheck) {
+        if (status !is UpdateStatus.Available &&
+            status !is UpdateStatus.Downloading &&
+            status !is UpdateStatus.ReadyToInstall
+        ) {
+            return
+        }
+    }
 
     val context = LocalContext.current
     val colors = ApexTheme.colors

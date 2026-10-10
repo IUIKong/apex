@@ -213,6 +213,7 @@ fun MainAppContent(
     val coroutineScope = rememberCoroutineScope()
     val updateManager = remember { AppUpdateManager() }
     val updateStatus by updateManager.status.collectAsStateWithLifecycle()
+    val isManualCheck by updateManager.isManualCheck.collectAsStateWithLifecycle()
 
     // Autonomous background check for updates on launch (if enabled in settings)
     LaunchedEffect(Unit) {
@@ -393,6 +394,7 @@ fun MainAppContent(
     AppUpdateDialog(
         status = updateStatus,
         currentVersion = BuildConfig.VERSION_NAME,
+        isManualCheck = isManualCheck,
         onStartUpdateClick = { updateInfo ->
             coroutineScope.launch {
                 updateManager.downloadAndInstall(context, updateInfo)

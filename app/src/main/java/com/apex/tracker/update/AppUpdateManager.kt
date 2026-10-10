@@ -30,8 +30,12 @@ class AppUpdateManager(
     private val _status = MutableStateFlow<UpdateStatus>(UpdateStatus.Idle)
     val status: StateFlow<UpdateStatus> = _status.asStateFlow()
 
+    private val _isManualCheck = MutableStateFlow(false)
+    val isManualCheck: StateFlow<Boolean> = _isManualCheck.asStateFlow()
+
     fun resetStatus() {
         _status.value = UpdateStatus.Idle
+        _isManualCheck.value = false
     }
 
     /**
@@ -43,8 +47,11 @@ class AppUpdateManager(
         currentVersion: String,
         isManual: Boolean = false
     ): UpdateInfo? = withContext(Dispatchers.IO) {
+        _isManualCheck.value = isManual
         if (isManual) {
             _status.value = UpdateStatus.Checking
+        } else {
+            _status.value = UpdateStatus.Idle
         }
         try {
             val endpoint = "https://api.github.com/repos/$repoOwner/$repoName/releases/latest"
