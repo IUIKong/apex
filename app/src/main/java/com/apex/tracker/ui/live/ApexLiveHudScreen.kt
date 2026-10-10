@@ -32,8 +32,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -92,6 +95,7 @@ fun ApexLiveHudScreen(
     onOpenLocationSettings: () -> Unit = {},
     onDismissLocationPrompt: () -> Unit = {},
     onStartWorkoutForce: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val view = LocalView.current
@@ -180,7 +184,10 @@ fun ApexLiveHudScreen(
                 )
             }
 
-            AtelierBrandHeader(uiState = uiState)
+            AtelierBrandHeader(
+                uiState = uiState,
+                onOpenSettings = onOpenSettings
+            )
 
             // 2. Map Canvas: Dedicated flexible container that expands to fill remaining space
             // Clean, responsive, uncluttered. Never overlaps or glitches into the metrics card below.
@@ -306,6 +313,7 @@ fun ApexLiveHudScreen(
 @Composable
 private fun AtelierBrandHeader(
     uiState: LiveHudUiState,
+    onOpenSettings: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val colors = ApexTheme.colors
@@ -396,6 +404,30 @@ private fun AtelierBrandHeader(
                             color = colors.textPrimary,
                             letterSpacing = 0.5.sp
                         )
+                    )
+                }
+            }
+
+            // Settings Gear Icon Button
+            if (onOpenSettings != null) {
+                val view = LocalView.current
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(colors.surfaceElevated)
+                        .border(1.dp, colors.borderSubtle, CircleShape)
+                        .tactilePress(pressedScale = 0.90f) {
+                            ApexAudioFeedback.playClick(view)
+                            onOpenSettings()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Settings",
+                        tint = colors.slateSubtle,
+                        modifier = Modifier.size(15.dp)
                     )
                 }
             }

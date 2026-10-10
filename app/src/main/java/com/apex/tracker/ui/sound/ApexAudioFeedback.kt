@@ -19,6 +19,8 @@ import android.view.View
  */
 object ApexAudioFeedback {
 
+    var isEnabled: Boolean = true
+
     private var lastClickTimeMs: Long = 0L
     private const val DEBOUNCE_MS = 40L
 
@@ -27,7 +29,7 @@ object ApexAudioFeedback {
      * Uses Android's [SoundEffectConstants.CLICK] via [View.playSoundEffect].
      */
     fun playClick(view: View?) {
-        if (view == null) return
+        if (!isEnabled || view == null) return
         val now = SystemClock.uptimeMillis()
         if (now - lastClickTimeMs < DEBOUNCE_MS) return
         lastClickTimeMs = now
@@ -46,7 +48,7 @@ object ApexAudioFeedback {
      * Plays a subtle click sound using [Context] / [AudioManager].
      */
     fun playClick(context: Context?) {
-        if (context == null) return
+        if (!isEnabled || context == null) return
         val now = SystemClock.uptimeMillis()
         if (now - lastClickTimeMs < DEBOUNCE_MS) return
         lastClickTimeMs = now

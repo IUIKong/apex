@@ -2,9 +2,14 @@ package com.apex.tracker.ui.splash
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -25,13 +30,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -48,124 +54,17 @@ import com.apex.tracker.ui.components.ApexLogoMark
 import com.apex.tracker.ui.sound.ApexAudioFeedback
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlin.math.sin
 
 /**
- * Individual typographic frame for the Marvel-style "R U N" font flipbook reel.
- * Every frame strictly displays "R U N" with fancy italic styling and zero layout shifts.
- */
-data class MarvelFontFrame(
-    val fontFamily: FontFamily,
-    val fontWeight: FontWeight,
-    val fontStyle: FontStyle = FontStyle.Italic,
-    val textColor: Color = Color(0xFF1C1917),
-    val accentColor: Color = Color(0xFFD9531E),
-    val subLabel: String
-)
-
-private const val INTRO_DISPLAY_TEXT = "R U N"
-
-private val MARVEL_FONT_REEL = listOf(
-    // Frame 0: Luxury Editorial Serif Italic (Light) - Crisp Platinum White
-    MarvelFontFrame(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.Light,
-        fontStyle = FontStyle.Italic,
-        textColor = Color(0xFFF8FAFC),
-        accentColor = Color(0xFF00F5D4),
-        subLabel = "PRECISION KINEMATICS"
-    ),
-    // Frame 1: High-Velocity Aerodynamic Sans Italic (Black) - Electric Cyan
-    MarvelFontFrame(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Black,
-        fontStyle = FontStyle.Italic,
-        textColor = Color(0xFF00F5D4),
-        accentColor = Color(0xFF00F5D4),
-        subLabel = "VELOCITY STRIDE // 120HZ"
-    ),
-    // Frame 2: Flowing Calligraphic Athletic Cursive Italic (Normal) - Electric Lime
-    MarvelFontFrame(
-        fontFamily = FontFamily.Cursive,
-        fontWeight = FontWeight.Normal,
-        fontStyle = FontStyle.Italic,
-        textColor = Color(0xFF00FF87),
-        accentColor = Color(0xFF00FF87),
-        subLabel = "ORGANIC MOTION CADENCE"
-    ),
-    // Frame 3: Chrono Racing Telemetry Monospace Italic (Bold) - Laser Amber
-    MarvelFontFrame(
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Bold,
-        fontStyle = FontStyle.Italic,
-        textColor = Color(0xFFF59E0B),
-        accentColor = Color(0xFFF59E0B),
-        subLabel = "GNSS SATELLITE LOCK"
-    ),
-    // Frame 4: Classic Marathon Trophy Serif Italic (Bold) - Pure White
-    MarvelFontFrame(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.Bold,
-        fontStyle = FontStyle.Italic,
-        textColor = Color(0xFFFFFFFF),
-        accentColor = Color(0xFFD9531E),
-        subLabel = "ENDURANCE PROTOCOL"
-    ),
-    // Frame 5: Minimalist Aerofoil Sans Italic (Light) - Sky Blue
-    MarvelFontFrame(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Light,
-        fontStyle = FontStyle.Italic,
-        textColor = Color(0xFF38BDF8),
-        accentColor = Color(0xFF38BDF8),
-        subLabel = "AERODYNAMIC PROFILE"
-    ),
-    // Frame 6: Bold Flowing Cursive Italic (Bold) - Coral Red
-    MarvelFontFrame(
-        fontFamily = FontFamily.Cursive,
-        fontWeight = FontWeight.Bold,
-        fontStyle = FontStyle.Italic,
-        textColor = Color(0xFFFB7185),
-        accentColor = Color(0xFFFB7185),
-        subLabel = "BIOMETRIC PULSE SYNC"
-    ),
-    // Frame 7: Precision Split Monospace Italic (Medium) - Solar Gold
-    MarvelFontFrame(
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Medium,
-        fontStyle = FontStyle.Italic,
-        textColor = Color(0xFFFBBF24),
-        accentColor = Color(0xFFFBBF24),
-        subLabel = "SUB-METER EKF FUSION"
-    ),
-    // Frame 8: Championship Heavy Serif Italic (ExtraBold) - Terracotta Blaze
-    MarvelFontFrame(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.ExtraBold,
-        fontStyle = FontStyle.Italic,
-        textColor = Color(0xFFFF6B4A),
-        accentColor = Color(0xFFFF6B4A),
-        subLabel = "CHAMPIONSHIP CIRCUIT"
-    ),
-    // Frame 9: Final Hero Marvel Lockup - Pure Athletic Apex Italic
-    MarvelFontFrame(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Black,
-        fontStyle = FontStyle.Italic,
-        textColor = Color(0xFFFFFFFF),
-        accentColor = Color(0xFFD9531E),
-        subLabel = "APEX ATHLETIC TRACKER"
-    )
-)
-
-/**
- * Buttery smooth, warm beige Marvel-style opening animation:
- * 1. Warm beige background (#FBFBF9) matching the light color scheme of the app.
- * 2. Contrast black/espresso orb bounces gracefully from the left to center with silky spring physics.
- * 3. Orb expands smoothly across the screen like an iris transition, seamlessly dissolving into the beige canvas.
- * 4. Fixed-dimension container displays strictly "R U N", cycling through fancy italic fonts without any layout shifting.
- * 5. Final hero frame locks into deep espresso "R U N" with terracotta Apex emblem, accent underline, and subtle click tone.
- * 6. Tap anywhere to skip instantly into the app.
+ * Editorial Athletic Opening Screen:
+ * 1. Deep Black dot drops in from the top and BOUNCES naturally into center screen with bouncy physics.
+ * 2. Dot expands smoothly and slowly like a cinematic iris, immersing the screen into obsidian black.
+ * 3. Text displays strictly "R U N" in large, bold, razor-sharp athletic typography.
+ * 4. Behind "R U N", a vibrant pixelated digital gradient grid moves continuously in a fluid athletic spectrum.
+ * 5. Tap anywhere to skip instantly.
  */
 @Composable
 fun ApexSplashIntroScreen(
@@ -175,16 +74,25 @@ fun ApexSplashIntroScreen(
     val context = LocalContext.current
 
     // Animation Controllers
-    val orbOffsetX = remember { Animatable(-1000f) }
+    val orbOffsetY = remember { Animatable(-1200f) }
     val orbScale = remember { Animatable(1f) }
     val orbAlpha = remember { Animatable(1f) }
     val borderAlpha = remember { Animatable(1f) }
-    val bgTransition = remember { Animatable(0f) } // 0f = warm beige (#FBFBF9), 1f = cinematic black (#080B10)
-    val reelAlpha = remember { Animatable(0f) }
-    val reelScale = remember { Animatable(1f) }
-    val heroAccentAlpha = remember { Animatable(0f) }
+    val bgTransition = remember { Animatable(0f) } // 0f = warm parchment (#FBFBF9), 1f = deep black (#080B10)
+    val contentAlpha = remember { Animatable(0f) }
+    val contentScale = remember { Animatable(0.92f) }
 
-    var currentFrameIndex by remember { mutableIntStateOf(0) }
+    // Infinite gradient shift for the pixelated gradient background
+    val infiniteTransition = rememberInfiniteTransition(label = "pixel_gradient_shift")
+    val gradientPhase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(4000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "phase_loop"
+    )
 
     val currentBg = androidx.compose.ui.graphics.lerp(
         Color(0xFFFBFBF9),
@@ -203,91 +111,73 @@ fun ApexSplashIntroScreen(
             }
     ) {
         val density = LocalDensity.current
-        val screenWidthPx = with(density) { maxWidth.toPx() }
+        val screenHeightPx = with(density) { maxHeight.toPx() }
 
         LaunchedEffect(Unit) {
-            // Orb starts off-screen to the left
-            orbOffsetX.snapTo(-screenWidthPx * 0.95f)
+            // Orb starts off-screen at the top
+            orbOffsetY.snapTo(-screenHeightPx * 0.75f)
 
-            // Phase 1: Orb bounces in smoothly from left to center (x = 0)
-            orbOffsetX.animateTo(
+            // Phase 1: Orb drops and BOUNCES into the center
+            orbOffsetY.animateTo(
                 targetValue = 0f,
                 animationSpec = spring(
-                    dampingRatio = 0.78f, // Silky smooth deceleration with gentle natural settling
-                    stiffness = 150f
+                    dampingRatio = 0.54f, // High bouncy elasticity for genuine bounce-in feel
+                    stiffness = 140f
                 )
             )
 
-            // Phase 2: Natural resting pause at center (160ms)
-            delay(160)
+            // Phase 2: Natural settling pause at center (200ms)
+            delay(200)
 
-            // Phase 3: Orb expands smoothly and buttery, turning the entire screen into deep obsidian black
+            // Phase 3: Orb expands slower and buttery smooth into deep obsidian black
             launch {
                 borderAlpha.animateTo(
                     targetValue = 0f,
-                    animationSpec = tween(
-                        durationMillis = 220,
-                        easing = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f)
-                    )
+                    animationSpec = tween(350, easing = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f))
                 )
             }
             launch {
                 bgTransition.animateTo(
                     targetValue = 1f,
-                    animationSpec = tween(
-                        durationMillis = 800,
-                        easing = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f)
-                    )
+                    animationSpec = tween(1200, easing = CubicBezierEasing(0.16f, 1.0f, 0.3f, 1.0f))
                 )
             }
             orbScale.animateTo(
-                targetValue = 55f, // Fully covers entire screen into solid black
+                targetValue = 65f, // Expands slower to fill entire screen
                 animationSpec = tween(
-                    durationMillis = 880,
-                    easing = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f)
+                    durationMillis = 1350,
+                    easing = CubicBezierEasing(0.16f, 1.0f, 0.3f, 1.0f)
                 )
             )
 
-            // Phase 4: Fade in Marvel text reel smoothly on the dark canvas
-            reelAlpha.animateTo(1f, tween(200))
-
-            // Flip through fancy italic font frames (135ms per frame for cinematic Marvel tempo)
-            for (i in 0 until MARVEL_FONT_REEL.size - 1) {
-                currentFrameIndex = i
-                delay(135)
-            }
-
-            // Phase 5: Lock onto the final Marvel Hero frame
-            currentFrameIndex = MARVEL_FONT_REEL.size - 1
+            // Phase 4: Fade and spring in the prominent "R U N" lockup with pixelated colors moving behind
             ApexAudioFeedback.playClick(context)
-
             launch {
-                heroAccentAlpha.animateTo(1f, tween(260))
+                contentScale.animateTo(
+                    targetValue = 1f,
+                    animationSpec = spring(dampingRatio = 0.75f, stiffness = 220f)
+                )
             }
-            reelScale.snapTo(1.05f)
-            reelScale.animateTo(
-                targetValue = 1f,
-                animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = 280f)
-            )
+            contentAlpha.animateTo(1f, tween(300))
 
-            // Hold on the final hero lockup (700ms)
-            delay(700)
+            // Hold on the vibrant "R U N" display (1100ms)
+            delay(1100)
 
-            // Phase 6: Smooth fade transition into main app
-            reelAlpha.animateTo(0f, tween(240))
+            // Phase 5: Fade out smoothly into main app
+            contentAlpha.animateTo(0f, tween(260))
 
             onFinish()
         }
 
         // =========================================================================
-        // BLACK ORB: Bounces to center from the left, then buttery iris expansion
+        // BLACK ORB: Bounces in from top, then expands slower into solid black
         // =========================================================================
-        if (bgTransition.value < 0.999f || orbScale.value < 50f) {
-            val orbSizeDp = 76.dp
+        if (bgTransition.value < 0.999f || orbScale.value < 60f) {
+            val orbSizeDp = 72.dp
             Box(
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .offset { IntOffset(orbOffsetX.value.roundToInt(), 0) }
+                    .offset { IntOffset(0, orbOffsetY.value.roundToInt()) }
                     .scale(orbScale.value)
                     .size(orbSizeDp)
                     .graphicsLayer { alpha = orbAlpha.value }
@@ -297,7 +187,7 @@ fun ApexSplashIntroScreen(
                         if (borderAlpha.value > 0.01f) {
                             Modifier.border(
                                 1.5.dp,
-                                Color(0xFFD9531E).copy(alpha = borderAlpha.value),
+                                Color(0xFF00E5FF).copy(alpha = borderAlpha.value * 0.8f),
                                 CircleShape
                             )
                         } else Modifier
@@ -306,19 +196,16 @@ fun ApexSplashIntroScreen(
         }
 
         // =========================================================================
-        // MARVEL INTRO REEL: Fixed-dimension container for zero layout shifting
+        // "R U N" DISPLAY: Big athletic typography with pixelated colors moving behind
         // =========================================================================
-        if (reelAlpha.value > 0.01f) {
-            val activeFrame = MARVEL_FONT_REEL[currentFrameIndex]
-            val isFinalHeroFrame = currentFrameIndex == MARVEL_FONT_REEL.size - 1
-
+        if (contentAlpha.value > 0.01f) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
-                        alpha = reelAlpha.value
-                        scaleX = reelScale.value
-                        scaleY = reelScale.value
+                        alpha = contentAlpha.value
+                        scaleX = contentScale.value
+                        scaleY = contentScale.value
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -327,77 +214,139 @@ fun ApexSplashIntroScreen(
                     verticalArrangement = Arrangement.Center,
                     modifier = Modifier.padding(horizontal = 24.dp)
                 ) {
-                    // Fixed-size header slot for Apex emblem (guarantees zero vertical shift)
-                    Box(
-                        modifier = Modifier.size(48.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        ApexLogoMark(
-                            size = 42.dp,
-                            accentColor = Color(0xFFD9531E),
-                            modifier = Modifier.graphicsLayer {
-                                alpha = if (isFinalHeroFrame) heroAccentAlpha.value else 0f
-                            }
-                        )
-                    }
+                    // Apex Logo Emblem
+                    ApexLogoMark(
+                        size = 44.dp,
+                        accentColor = Color(0xFF00E5FF)
+                    )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                    // Main "R U N" animated typographic box with strictly fixed dimensions
+                    // Container for "R U N" with pixelated moving gradient backdrop
                     Box(
                         modifier = Modifier
                             .width(320.dp)
-                            .height(72.dp),
+                            .height(110.dp),
                         contentAlignment = Alignment.Center
                     ) {
+                        // 1. Pixelated moving gradient background behind "R U N"
+                        PixelatedMovingGradientBackdrop(
+                            phase = gradientPhase,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(14.dp))
+                        )
+
+                        // 2. Translucent dark filter over pixels for maximum typographic contrast
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Color(0x66080B10))
+                                .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(14.dp))
+                        )
+
+                        // 3. Bold, Large Athletic "R U N" Typography
                         Text(
-                            text = INTRO_DISPLAY_TEXT,
-                            color = activeFrame.textColor,
-                            fontFamily = activeFrame.fontFamily,
-                            fontWeight = activeFrame.fontWeight,
-                            fontStyle = activeFrame.fontStyle,
-                            letterSpacing = 14.sp,
-                            fontSize = 52.sp,
-                            textAlign = TextAlign.Center
+                            text = "R U N",
+                            color = Color(0xFFFFFFFF),
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Black,
+                            fontStyle = FontStyle.Italic,
+                            fontSize = 62.sp,
+                            letterSpacing = 16.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(start = 16.dp) // Optical center offset for tracked letters
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                    // Fixed-size sub-label badge container (zero horizontal/vertical shift)
+                    // Minimal athletic sub-label pill
                     Box(
                         modifier = Modifier
-                            .width(260.dp)
-                            .height(30.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(Color(0xFF161D28))
-                            .border(1.dp, activeFrame.accentColor.copy(alpha = 0.6f), RoundedCornerShape(6.dp)),
-                        contentAlignment = Alignment.Center
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Color(0xFF141922))
+                            .border(1.dp, Color(0xFF00E5FF).copy(alpha = 0.5f), RoundedCornerShape(20.dp))
+                            .padding(horizontal = 16.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            text = activeFrame.subLabel,
-                            color = activeFrame.accentColor,
+                            text = "APEX ATHLETIC TRACKER",
+                            color = Color(0xFF00E5FF),
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.sp,
-                            letterSpacing = 1.6.sp,
+                            letterSpacing = 1.8.sp,
                             textAlign = TextAlign.Center
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Fixed-size bottom accent slot for clean hero underline
-                    Box(
-                        modifier = Modifier
-                            .width(88.dp)
-                            .height(3.dp)
-                            .clip(RoundedCornerShape(1.5.dp))
-                            .background(
-                                Color(0xFFD9531E).copy(alpha = if (isFinalHeroFrame) heroAccentAlpha.value else 0f)
-                            )
-                    )
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Pixelated Digital Gradient Backdrop:
+ * Renders a matrix of chunky discrete pixel blocks whose colors are sampled from
+ * a fluid, moving multi-color athletic gradient across time.
+ */
+@Composable
+private fun PixelatedMovingGradientBackdrop(
+    phase: Float,
+    modifier: Modifier = Modifier
+) {
+    // Vibrant athletic color palette
+    val palette = remember {
+        listOf(
+            Color(0xFF00E5FF), // Electric Cyan
+            Color(0xFF76FF03), // Electric Lime
+            Color(0xFFFFB300), // Laser Amber
+            Color(0xFFFF1744), // Punchy Crimson
+            Color(0xFF7C4DFF), // Vivid Violet
+            Color(0xFF00E5FF)  // Wrap back to Cyan
+        )
+    }
+
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+
+        val pixelSizePx = 11.dp.toPx()
+        val gapPx = 2.dp.toPx()
+        val step = pixelSizePx + gapPx
+
+        val cols = (w / step).toInt() + 1
+        val rows = (h / step).toInt() + 1
+
+        val paletteSize = palette.size
+
+        for (r in 0 until rows) {
+            for (c in 0 until cols) {
+                val x = c * step
+                val y = r * step
+
+                // Spatial coordinate + animated phase wave
+                val wave = ((c.toFloat() / cols) * 0.7f + (r.toFloat() / rows) * 0.3f + phase) % 1.0f
+
+                // Interpolate through athletic palette
+                val paletteIndexF = (wave * (paletteSize - 1))
+                val idx1 = paletteIndexF.toInt().coerceIn(0, paletteSize - 2)
+                val idx2 = idx1 + 1
+                val frac = paletteIndexF - idx1
+
+                val baseColor = androidx.compose.ui.graphics.lerp(palette[idx1], palette[idx2], frac)
+
+                // Subtle checkerboard brightness variation for authentic chunky digital pixel effect
+                val checker = if ((c + r) % 2 == 0) 0.88f else 1.0f
+                val pixelColor = baseColor.copy(alpha = 0.82f * checker)
+
+                drawRoundRect(
+                    color = pixelColor,
+                    topLeft = Offset(x, y),
+                    size = Size(pixelSizePx, pixelSizePx),
+                    cornerRadius = CornerRadius(2.dp.toPx())
+                )
             }
         }
     }

@@ -36,6 +36,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalView
@@ -175,6 +177,7 @@ fun SlideToLockGuard(
 
         // Draggable thumb pill
         val displayOffset = if (isDragging) dragOffset.coerceIn(0f, maxOffsetPx) else offsetAnimatable.value.coerceIn(0f, maxOffsetPx)
+        val lockProgress = if (maxOffsetPx > 0f) (displayOffset / maxOffsetPx).coerceIn(0f, 1f) else (if (isLocked) 1f else 0f)
 
         Box(
             modifier = Modifier
@@ -210,14 +213,109 @@ fun SlideToLockGuard(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = if (isLocked) "◀" else "▶",
-                style = typography.LabelMicro.copy(
-                    fontSize = 11.sp,
-                    color = colors.canvasBackground,
-                    fontWeight = FontWeight.Bold
-                )
+            AnimatedPadlockIcon(
+                lockProgress = lockProgress,
+                tint = colors.canvasBackground,
+                cutoutColor = thumbColor,
+                modifier = Modifier.size(20.dp)
             )
+        }
+    }
+}
+
+/**
+ * Animated Padlock Icon:
+ * Shackle smoothly swings open when unlocked (progress = 0) and clicks shut
+ * flush into the lock body as the user slides across to locked (progress = 1).
+ */
+@Composable
+private fun AnimatedPadlockIcon(
+    lockProgress: Float,
+    tint: androidx.compose.ui.graphics.Color,
+    cutoutColor: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier
+) {
+    androidx.compose.foundation.Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+
+        // Lock Body (bottom 55% of icon)
+        val bodyWidth = w * 0.72f
+        val bodyHeight = h * 0.52f
+        val bodyLeft = (w - bodyWidth) / 2f
+        val bodyTop = h - bodyHeight - 1.5.dp.toPx()
+        val cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.2.dp.toPx())
+
+        // Draw Lock Body
+        drawRoundRect(
+            color = tint,
+            topLeft = androidx.compose.ui.geometry.Offset(bodyLeft, bodyTop),
+            size = androidx.compose.ui.geometry.Size(bodyWidth, bodyHeight),
+            cornerRadius = cornerRadius
+        )
+
+        // Keyhole tumbler cutout in center of body
+        val keyholeX = bodyLeft + bodyWidth / 2f
+        val keyholeY = bodyTop + bodyHeight * 0.40f
+        drawCircle(
+            color = cutoutColor,
+            radius = 1.3.dp.toPx(),
+            center = androidx.compose.ui.geometry.Offset(keyholeX, keyholeY)
+        )
+        drawLine(
+            color = cutoutColor,
+            start = androidx.compose.ui.geometry.Offset(keyholeX, keyholeY),
+            end = androidx.compose.ui.geometry.Offset(keyholeX, bodyTop + bodyHeight * 0.74f),
+            strokeWidth = 1.4.dp.toPx(),
+            cap = androidx.compose.ui.graphics.StrokeCap.Round
+        )
+
+        // Shackle Geometry
+        // When progress = 1 (locked): shackle is fully closed into body
+        // When progress = 0 (unlocked): shackle is lifted and swung open by -26 degrees
+        val shackleWidth = bodyWidth * 0.60f
+        val shackleHeight = h * 0.40f
+        val shackleLeft = (w - shackleWidth) / 2f
+        val strokeWidthPx = 1.9.dp.toPx()
+
+        val openFraction = (1f - lockProgress).coerceIn(0f, 1f)
+        val shacklePivotX = shackleLeft + strokeWidthPx / 2f
+        val shacklePivotY = bodyTop
+
+        rotate(
+            degrees = -26f * openFraction,
+            pivot = androidx.compose.ui.geometry.Offset(shacklePivotX, shacklePivotY)
+        ) {
+            translate(left = 0f, top = -2.5.dp.toPx() * openFraction) {
+                val shacklePath = androidx.compose.ui.graphics.Path().apply {
+                    // Left leg anchored in lock body
+                    moveTo(shackleLeft, bodyTop + 1.dp.toPx())
+                    lineTo(shackleLeft, bodyTop - shackleHeight + shackleWidth / 2f)
+                    // Top curved arch
+                    arcTo(
+                        rect = androidx.compose.ui.geometry.Rect(
+                            shackleLeft,
+                            bodyTop - shackleHeight,
+                            shackleLeft + shackleWidth,
+                            bodyTop - shackleHeight + shackleWidth
+                        ),
+                        startAngleDegrees = 180f,
+                        sweepAngleDegrees = 180f,
+                        forceMoveTo = false
+                    )
+                    // Right leg descending into body
+                    lineTo(shackleLeft + shackleWidth, bodyTop + 1.dp.toPx())
+                }
+
+                drawPath(
+                    path = shacklePath,
+                    color = tint,
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(
+                        width = strokeWidthPx,
+                        cap = androidx.compose.ui.graphics.StrokeCap.Round
+                    )
+                )
+            }
         }
     }
 }

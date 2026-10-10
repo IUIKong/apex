@@ -403,9 +403,12 @@ class EkfStateEstimator : StateEstimator {
         val dispSpeed = dFiltered / dt
         val rawSpeed = dRaw / dt
         val baseSpeed = min(dispSpeed, if (dRaw > 0.0) rawSpeed else dispSpeed)
-        val isGpsDopplerStationary = (lastGpsSpeedMps != null && lastGpsSpeedMps!! < 0.25f && (lastGpsSpeedAccuracyMps ?: 1f) <= 1.2f)
-        val effectiveSpeed = if (isGpsDopplerStationary) {
-            min(baseSpeed, lastGpsSpeedMps!!.toDouble())
+        val isGpsDopplerStationary = (lastGpsSpeedMps != null && lastGpsSpeedMps!! < 0.45f && (lastGpsSpeedAccuracyMps ?: 1f) <= 1.5f)
+        val isGpsLowDisplacement = (baseSpeed < 0.45 && rawSpeed < 0.50)
+        val isGpsStationary = isGpsDopplerStationary || isGpsLowDisplacement
+
+        val effectiveSpeed = if (isGpsStationary) {
+            if (lastGpsSpeedMps != null && lastGpsSpeedMps!! < 0.45f) min(baseSpeed, lastGpsSpeedMps!!.toDouble()) else 0.0
         } else {
             baseSpeed
         }
@@ -414,7 +417,9 @@ class EkfStateEstimator : StateEstimator {
         val eAcc = autoPauseClassifier.computeAccelerometerEnergy()
         val isStationaryImu = hasAccel && eAcc < autoPauseClassifier.activityType.eStopMps2 && effectiveSpeed < autoPauseClassifier.activityType.vMoveMps
 
-        val isStationary = isStationaryImu || isGpsDopplerStationary
+        // High accelerometer energy with near-zero GPS displacement is stationary phone shaking, NOT locomotion
+        val isStationaryShake = isGpsStationary && hasAccel && effectiveSpeed < autoPauseClassifier.activityType.vStopMps
+        val isStationary = isStationaryImu || isGpsStationary || isStationaryShake
 
         if (isStationary) {
             state[2] = 0.0
@@ -612,7 +617,7 @@ class EkfStateEstimator : StateEstimator {
             state[2] = step.speedMps * sin(step.headingRad)
             state[3] = step.speedMps * cos(step.headingRad)
 
-            if (step.stepDistanceMeters > 0.0) {
+            if (step.stepDistanceMeters > 0.0 && autoPauseClassifier.currentState != MotionState.STOPPED) {
                 distanceAccumulators.addFilteredPosition(state[0], state[1])
                 distanceAccumulators.addAcceptedDistance(step.stepDistanceMeters)
                 movingTimeMs += (dt * 1000.0).toLong()

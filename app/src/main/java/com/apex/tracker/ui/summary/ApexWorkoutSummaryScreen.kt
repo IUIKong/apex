@@ -43,8 +43,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -117,6 +119,12 @@ fun ApexWorkoutSummaryScreen(
             .fillMaxSize()
             .background(colors.canvasBackground)
     ) {
+        // Full-screen celebratory confetti & victory particle burst
+        CelebratoryConfettiBurstCanvas(
+            progress = progress,
+            modifier = Modifier.fillMaxSize()
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -437,3 +445,91 @@ private fun CelebratoryWorkoutHeader(
         }
     }
 }
+
+/**
+ * Full-screen kinetic celebratory confetti & victory particle burst.
+ * Explodes outward from the top-center upon workout completion, fluttering downward.
+ */
+@Composable
+private fun CelebratoryConfettiBurstCanvas(
+    progress: Float,
+    modifier: Modifier = Modifier
+) {
+    if (progress >= 1f) return // Fade out once celebration settling is complete
+
+    val particles = remember {
+        val colors = listOf(
+            Color(0xFF00F5D4), // Electric Cyan
+            Color(0xFF00FF87), // Electric Lime
+            Color(0xFFF59E0B), // Laser Amber
+            Color(0xFFD9531E), // Terracotta Crimson
+            Color(0xFFFFFFFF), // Pure Platinum
+            Color(0xFF38BDF8), // Sky Cyan
+            Color(0xFFA855F7)  // Electric Violet
+        )
+        List(56) { i ->
+            val angle = ((i * 137.5) % 360.0) * (Math.PI / 180.0)
+            val speed = 250f + (i * 37 % 500)
+            ConfettiParticle(
+                initialXRatio = 0.5f + (((i % 7) - 3) * 0.05f),
+                initialYRatio = 0.12f,
+                velocityX = (cos(angle) * speed).toFloat(),
+                velocityY = (sin(angle) * speed * 0.7f - 180f).toFloat(),
+                size = 6f + (i % 5) * 2.5f,
+                isRibbon = i % 3 != 0,
+                rotationSpeed = 120f + (i * 29 % 360),
+                color = colors[i % colors.size]
+            )
+        }
+    }
+
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val p = progress.coerceIn(0f, 1f)
+        val alpha = ((1f - p) * 1.2f).coerceIn(0f, 1f)
+        val gravity = 900f * (p * p)
+
+        particles.forEachIndexed { i, particle ->
+            val originX = particle.initialXRatio * w
+            val originY = particle.initialYRatio * h
+
+            // Drift with flutter
+            val flutter = sin((p * 10f) + i) * 22f
+            val curX = originX + (particle.velocityX * p) + flutter
+            val curY = originY + (particle.velocityY * p) + (gravity * 0.5f)
+
+            if (curX in -50f..(w + 50f) && curY in -50f..(h + 50f)) {
+                val currentRot = (p * particle.rotationSpeed * 3f) % 360f
+                val pColor = particle.color.copy(alpha = alpha)
+
+                rotate(degrees = currentRot, pivot = Offset(curX, curY)) {
+                    if (particle.isRibbon) {
+                        drawRect(
+                            color = pColor,
+                            topLeft = Offset(curX - particle.size, curY - particle.size * 0.4f),
+                            size = Size(particle.size * 2f, particle.size * 0.8f)
+                        )
+                    } else {
+                        drawCircle(
+                            color = pColor,
+                            radius = particle.size * 0.6f,
+                            center = Offset(curX, curY)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+private data class ConfettiParticle(
+    val initialXRatio: Float,
+    val initialYRatio: Float,
+    val velocityX: Float,
+    val velocityY: Float,
+    val size: Float,
+    val isRibbon: Boolean,
+    val rotationSpeed: Float,
+    val color: Color
+)

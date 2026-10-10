@@ -25,7 +25,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -62,6 +65,7 @@ fun ApexWorkoutsHistoryScreen(
     onDeleteWorkout: (String) -> Unit,
     onCheckForUpdates: (() -> Unit)? = null,
     updateStatus: UpdateStatus = UpdateStatus.Idle,
+    onOpenSettings: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val view = LocalView.current
@@ -119,43 +123,71 @@ fun ApexWorkoutsHistoryScreen(
                 }
             }
 
-            // In-app Update Pill
-            if (onCheckForUpdates != null) {
-                val isUpdateAvailable = updateStatus is UpdateStatus.Available
-                val pillBorder = if (isUpdateAvailable) ApexTheme.colors.electricCyan else ApexTheme.colors.borderSubtle
-                val pillBg = if (isUpdateAvailable) ApexTheme.colors.surfaceHigh else ApexTheme.colors.surface
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // In-app Update Pill
+                if (onCheckForUpdates != null) {
+                    val isUpdateAvailable = updateStatus is UpdateStatus.Available
+                    val pillBorder = if (isUpdateAvailable) ApexTheme.colors.electricCyan else ApexTheme.colors.borderSubtle
+                    val pillBg = if (isUpdateAvailable) ApexTheme.colors.surfaceHigh else ApexTheme.colors.surface
 
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(ApexDimens.RadiusPillFull))
-                        .background(pillBg)
-                        .border(1.dp, pillBorder, RoundedCornerShape(ApexDimens.RadiusPillFull))
-                        .tactilePress(pressedScale = 0.94f) {
-                            ApexAudioFeedback.playClick(view)
-                            onCheckForUpdates()
-                        }
-                        .padding(horizontal = 10.dp, vertical = 5.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(ApexDimens.RadiusPillFull))
+                            .background(pillBg)
+                            .border(1.dp, pillBorder, RoundedCornerShape(ApexDimens.RadiusPillFull))
+                            .tactilePress(pressedScale = 0.94f) {
+                                ApexAudioFeedback.playClick(view)
+                                onCheckForUpdates()
+                            }
+                            .padding(horizontal = 10.dp, vertical = 5.dp)
                     ) {
-                        if (isUpdateAvailable) {
-                            Box(
-                                modifier = Modifier
-                                    .size(6.dp)
-                                    .clip(CircleShape)
-                                    .background(ApexTheme.colors.electricCyan)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            if (isUpdateAvailable) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(ApexTheme.colors.electricCyan)
+                                )
+                            }
+                            Text(
+                                text = if (isUpdateAvailable) "UPDATE AVAILABLE" else "CHECK UPDATES",
+                                style = ApexTheme.typography.LabelMicro.copy(
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = if (isUpdateAvailable) ApexTheme.colors.electricCyan else ApexTheme.colors.slateSubtle,
+                                    letterSpacing = 0.8.sp
+                                )
                             )
                         }
-                        Text(
-                            text = if (isUpdateAvailable) "UPDATE AVAILABLE" else "CHECK UPDATES",
-                            style = ApexTheme.typography.LabelMicro.copy(
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Black,
-                                color = if (isUpdateAvailable) ApexTheme.colors.electricCyan else ApexTheme.colors.slateSubtle,
-                                letterSpacing = 0.8.sp
-                            )
+                    }
+                }
+
+                // Settings Gear Button
+                if (onOpenSettings != null) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(ApexTheme.colors.surfaceElevated)
+                            .border(1.dp, ApexTheme.colors.borderSubtle, CircleShape)
+                            .tactilePress(pressedScale = 0.90f) {
+                                ApexAudioFeedback.playClick(view)
+                                onOpenSettings()
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings",
+                            tint = ApexTheme.colors.slateSubtle,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }

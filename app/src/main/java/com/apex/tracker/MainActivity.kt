@@ -82,6 +82,8 @@ import com.apex.tracker.BuildConfig
 import com.apex.tracker.ui.components.tactilePress
 import com.apex.tracker.ui.history.ApexWorkoutsHistoryScreen
 import com.apex.tracker.ui.live.ApexLiveHudScreen
+import com.apex.tracker.ui.settings.ApexSettingsScreen
+import com.apex.tracker.ui.settings.AppSettings
 import com.apex.tracker.ui.sound.ApexAudioFeedback
 import com.apex.tracker.ui.splash.ApexSplashIntroScreen
 import com.apex.tracker.ui.summary.ApexWorkoutSummaryScreen
@@ -180,28 +182,18 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
-        private const val PREFS_NAME = "apex_preferences"
-        private const val KEY_LAST_INTRO_SHOWN_MS = "key_last_intro_shown_ms"
-        // 7 days in milliseconds: 7 * 24 * 60 * 60 * 1000 = 604,800,000 ms
-        const val INTRO_INTERVAL_MS = 7L * 24 * 60 * 60 * 1000L
-
         /**
-         * Checks if the intro animation should run.
-         * Plays on the very first launch, and thereafter only if 7 or more days have elapsed.
+         * Checks if the intro animation should run based on user preference and interval.
          */
         fun shouldShowIntro(context: Context): Boolean {
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            val lastShown = prefs.getLong(KEY_LAST_INTRO_SHOWN_MS, 0L)
-            val now = System.currentTimeMillis()
-            return lastShown == 0L || (now - lastShown) >= INTRO_INTERVAL_MS
+            return AppSettings.shouldShowIntro(context)
         }
 
         /**
          * Records that the intro animation was completed or skipped.
          */
         fun markIntroShown(context: Context) {
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            prefs.edit().putLong(KEY_LAST_INTRO_SHOWN_MS, System.currentTimeMillis()).apply()
+            AppSettings.markIntroShown(context)
         }
     }
 }
@@ -215,19 +207,28 @@ fun MainAppContent(
     // Default to RECORD tab
     var selectedTab by remember { mutableIntStateOf(1) }
     var viewingSummary by remember { mutableStateOf(false) }
+    var viewingSettings by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val updateManager = remember { AppUpdateManager() }
     val updateStatus by updateManager.status.collectAsStateWithLifecycle()
 
-    // Autonomous background check for updates on launch (silent mode, prompts only if available)
+    // Autonomous background check for updates on launch (if enabled in settings)
     LaunchedEffect(Unit) {
-        updateManager.checkForUpdates(BuildConfig.VERSION_NAME, isManual = false)
+        AppSettings.isAudioFeedbackEnabled(context) // Initialize audio feedback flag
+        if (AppSettings.isAutoCheckUpdatesEnabled(context)) {
+            updateManager.checkForUpdates(BuildConfig.VERSION_NAME, isManual = false)
+        }
+    }
+
+    // Intercept hardware Back button when in settings menu
+    BackHandler(enabled = viewingSettings) {
+        viewingSettings = false
     }
 
     // Intercept hardware Back button when reviewing a workout summary
-    BackHandler(enabled = viewingSummary) {
+    BackHandler(enabled = viewingSummary && !viewingSettings) {
         viewModel.resetLiveHud()
         viewingSummary = false
         selectedTab = 0
@@ -242,7 +243,7 @@ fun MainAppContent(
         containerColor = ApexTheme.colors.canvasBackground,
         contentWindowInsets = WindowInsets.statusBars,
         bottomBar = {
-            if (!viewingSummary) {
+            if (!viewingSummary && !viewingSettings) {
                 ApexBottomNavigationBar(
                     selectedTabIndex = selectedTab,
                     onTabSelected = { tab ->
@@ -261,93 +262,126 @@ fun MainAppContent(
                 .padding(innerPadding)
         ) {
             AnimatedContent(
-                targetState = viewingSummary,
+                targetState = viewingSettings,
                 transitionSpec = {
                     val luxuryEase = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f)
                     if (targetState) {
-                        (slideInVertically(tween(380, easing = luxuryEase)) { it / 2 } + fadeIn(tween(280, easing = luxuryEase)))
+                        (slideInHorizontally(tween(340, easing = luxuryEase)) { it } + fadeIn(tween(260, easing = luxuryEase)))
                             .togetherWith(
-                                slideOutVertically(tween(320, easing = luxuryEase)) { -it / 3 } + fadeOut(tween(220, easing = luxuryEase))
+                                slideOutHorizontally(tween(300, easing = luxuryEase)) { -it / 3 } + fadeOut(tween(200, easing = luxuryEase))
                             )
                     } else {
-                        (slideInVertically(tween(380, easing = luxuryEase)) { -it / 3 } + fadeIn(tween(280, easing = luxuryEase)))
+                        (slideInHorizontally(tween(340, easing = luxuryEase)) { -it / 3 } + fadeIn(tween(260, easing = luxuryEase)))
                             .togetherWith(
-                                slideOutVertically(tween(320, easing = luxuryEase)) { it / 2 } + fadeOut(tween(220, easing = luxuryEase))
+                                slideOutHorizontally(tween(300, easing = luxuryEase)) { it } + fadeOut(tween(200, easing = luxuryEase))
                             )
                     }
                 },
-                label = "summary_screen_transition"
-            ) { isSummary ->
-                if (isSummary) {
-                    ApexWorkoutSummaryScreen(
-                        summaryState = summaryState,
-                        onDoneClick = {
-                            viewModel.resetLiveHud()
-                            viewingSummary = false
-                            selectedTab = 0 // Switch to Logbook
+                label = "settings_screen_transition"
+            ) { isSettings ->
+                if (isSettings) {
+                    ApexSettingsScreen(
+                        onNavigateBack = { viewingSettings = false },
+                        updateStatus = updateStatus,
+                        onCheckForUpdates = {
+                            coroutineScope.launch {
+                                updateManager.checkForUpdates(BuildConfig.VERSION_NAME, isManual = true)
+                            }
                         }
                     )
                 } else {
                     AnimatedContent(
-                        targetState = selectedTab,
+                        targetState = viewingSummary,
                         transitionSpec = {
                             val luxuryEase = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f)
-                            val forward = targetState > initialState
-                            if (forward) {
-                                (slideInHorizontally(tween(340, easing = luxuryEase)) { it / 3 } + fadeIn(tween(260, easing = luxuryEase)))
+                            if (targetState) {
+                                (slideInVertically(tween(380, easing = luxuryEase)) { it / 2 } + fadeIn(tween(280, easing = luxuryEase)))
                                     .togetherWith(
-                                        slideOutHorizontally(tween(300, easing = luxuryEase)) { -it / 3 } + fadeOut(tween(200, easing = luxuryEase))
+                                        slideOutVertically(tween(320, easing = luxuryEase)) { -it / 3 } + fadeOut(tween(220, easing = luxuryEase))
                                     )
                             } else {
-                                (slideInHorizontally(tween(340, easing = luxuryEase)) { -it / 3 } + fadeIn(tween(260, easing = luxuryEase)))
+                                (slideInVertically(tween(380, easing = luxuryEase)) { -it / 3 } + fadeIn(tween(280, easing = luxuryEase)))
                                     .togetherWith(
-                                        slideOutHorizontally(tween(300, easing = luxuryEase)) { it / 3 } + fadeOut(tween(200, easing = luxuryEase))
+                                        slideOutVertically(tween(320, easing = luxuryEase)) { it / 2 } + fadeOut(tween(220, easing = luxuryEase))
                                     )
                             }
                         },
-                        label = "tab_content_transition"
-                    ) { currentTab ->
-                        when (currentTab) {
-                            0 -> ApexWorkoutsHistoryScreen(
-                                workouts = allWorkouts,
-                                onWorkoutSelected = { workoutId ->
-                                    viewModel.loadWorkoutDetails(workoutId)
-                                    viewingSummary = true
-                                },
-                                onDeleteWorkout = { workoutId ->
-                                    viewModel.deleteWorkout(workoutId)
-                                },
-                                onCheckForUpdates = {
-                                    coroutineScope.launch {
-                                        updateManager.checkForUpdates(BuildConfig.VERSION_NAME, isManual = true)
+                        label = "summary_screen_transition"
+                    ) { isSummary ->
+                        if (isSummary) {
+                            ApexWorkoutSummaryScreen(
+                                summaryState = summaryState,
+                                onDoneClick = {
+                                    viewModel.resetLiveHud()
+                                    viewingSummary = false
+                                    selectedTab = 0 // Switch to Logbook
+                                }
+                            )
+                        } else {
+                            AnimatedContent(
+                                targetState = selectedTab,
+                                transitionSpec = {
+                                    val luxuryEase = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f)
+                                    val forward = targetState > initialState
+                                    if (forward) {
+                                        (slideInHorizontally(tween(340, easing = luxuryEase)) { it / 3 } + fadeIn(tween(260, easing = luxuryEase)))
+                                            .togetherWith(
+                                                slideOutHorizontally(tween(300, easing = luxuryEase)) { -it / 3 } + fadeOut(tween(200, easing = luxuryEase))
+                                            )
+                                    } else {
+                                        (slideInHorizontally(tween(340, easing = luxuryEase)) { -it / 3 } + fadeIn(tween(260, easing = luxuryEase)))
+                                            .togetherWith(
+                                                slideOutHorizontally(tween(300, easing = luxuryEase)) { it / 3 } + fadeOut(tween(200, easing = luxuryEase))
+                                            )
                                     }
                                 },
-                                updateStatus = updateStatus
-                            )
+                                label = "tab_content_transition"
+                            ) { currentTab ->
+                                when (currentTab) {
+                                    0 -> ApexWorkoutsHistoryScreen(
+                                        workouts = allWorkouts,
+                                        onWorkoutSelected = { workoutId ->
+                                            viewModel.loadWorkoutDetails(workoutId)
+                                            viewingSummary = true
+                                        },
+                                        onDeleteWorkout = { workoutId ->
+                                            viewModel.deleteWorkout(workoutId)
+                                        },
+                                        onCheckForUpdates = {
+                                            coroutineScope.launch {
+                                                updateManager.checkForUpdates(BuildConfig.VERSION_NAME, isManual = true)
+                                            }
+                                        },
+                                        updateStatus = updateStatus,
+                                        onOpenSettings = { viewingSettings = true }
+                                    )
 
-                            1 -> ApexLiveHudScreen(
-                                uiState = liveState,
-                                onStartWorkout = { viewModel.startWorkout(liveState.activityType) },
-                                onPauseWorkout = { viewModel.pauseWorkout() },
-                                onResumeWorkout = { viewModel.resumeWorkout() },
-                                onFinishWorkout = {
-                                    val saved = viewModel.finishWorkout()
-                                    if (saved) {
-                                        viewingSummary = true // Open full workout summary only if workout saved
-                                    }
-                                },
-                                onLockChanged = { locked -> viewModel.setControlsLocked(locked) },
-                                onToggleTheme = { viewModel.toggleTheme() },
-                                onActivityTypeChanged = { type -> viewModel.setActivityType(type) },
-                                onBatteryProfileChanged = { profile -> viewModel.setBatteryProfile(profile) },
-                                onToggleRawTrace = { viewModel.toggleRawTrace() },
-                                onToggleAutoFollow = { viewModel.toggleAutoFollow() },
-                                onResumeInterruptedSession = { viewModel.resumeInterruptedSession() },
-                                onDiscardInterruptedSession = { viewModel.discardInterruptedSession() },
-                                onOpenLocationSettings = onOpenLocationSettings,
-                                onDismissLocationPrompt = { viewModel.dismissLocationPrompt() },
-                                onStartWorkoutForce = { viewModel.startWorkout(liveState.activityType, forceStart = true) }
-                            )
+                                    1 -> ApexLiveHudScreen(
+                                        uiState = liveState,
+                                        onStartWorkout = { viewModel.startWorkout(liveState.activityType) },
+                                        onPauseWorkout = { viewModel.pauseWorkout() },
+                                        onResumeWorkout = { viewModel.resumeWorkout() },
+                                        onFinishWorkout = {
+                                            val saved = viewModel.finishWorkout()
+                                            if (saved) {
+                                                viewingSummary = true // Open full workout summary only if workout saved
+                                            }
+                                        },
+                                        onLockChanged = { locked -> viewModel.setControlsLocked(locked) },
+                                        onToggleTheme = { viewModel.toggleTheme() },
+                                        onActivityTypeChanged = { type -> viewModel.setActivityType(type) },
+                                        onBatteryProfileChanged = { profile -> viewModel.setBatteryProfile(profile) },
+                                        onToggleRawTrace = { viewModel.toggleRawTrace() },
+                                        onToggleAutoFollow = { viewModel.toggleAutoFollow() },
+                                        onResumeInterruptedSession = { viewModel.resumeInterruptedSession() },
+                                        onDiscardInterruptedSession = { viewModel.discardInterruptedSession() },
+                                        onOpenLocationSettings = onOpenLocationSettings,
+                                        onDismissLocationPrompt = { viewModel.dismissLocationPrompt() },
+                                        onStartWorkoutForce = { viewModel.startWorkout(liveState.activityType, forceStart = true) },
+                                        onOpenSettings = { viewingSettings = true }
+                                    )
+                                }
+                            }
                         }
                     }
                 }

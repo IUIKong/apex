@@ -105,21 +105,21 @@ object WorkoutShareHelper {
         val badgeTop = 56f
         val badgeRect = RectF(margin, badgeTop, margin + badgeSize, badgeTop + badgeSize)
 
-        // Logo Badge Background & Border
+        // Official Obsidian Black Logo Badge matching ApexLogoMark
         val badgeBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFFFFFFF.toInt()
+            color = 0xFF0C0A09.toInt() // Deep Obsidian Black
             style = Paint.Style.FILL
         }
         canvas.drawRoundRect(badgeRect, 18f, 18f, badgeBgPaint)
 
         val badgeBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFE7E4DF.toInt()
+            color = 0xFF262626.toInt() // Subtle Dark Border
             strokeWidth = 2f
             style = Paint.Style.STROKE
         }
         canvas.drawRoundRect(badgeRect, 18f, 18f, badgeBorderPaint)
 
-        // Dynamic Chevron Emblem
+        // Official Dynamic Chevron Emblem
         val chevronScale = (badgeSize * 0.68f) / 48f
         val chevronOffsetX = badgeRect.left + (badgeSize - 48f * chevronScale) / 2f
         val chevronOffsetY = badgeRect.top + (badgeSize - 48f * chevronScale) / 2f
@@ -134,7 +134,7 @@ object WorkoutShareHelper {
             close()
         }
         val outerPeakPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFF1C1917.toInt()
+            color = 0xFFFFFFFF.toInt() // Crisp Pure White
             style = Paint.Style.FILL
         }
         canvas.drawPath(outerPeakPath, outerPeakPaint)
@@ -149,7 +149,7 @@ object WorkoutShareHelper {
             close()
         }
         val innerPeakPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFD9531E.toInt() // Runner Terracotta accent
+            color = 0xFFF5F5F4.toInt() // Crisp Platinum / White
             style = Paint.Style.FILL
         }
         canvas.drawPath(innerPeakPath, innerPeakPaint)
@@ -551,33 +551,19 @@ object WorkoutShareHelper {
         }
         canvas.drawLine(margin, dividerY, margin + contentWidth, dividerY, dividerPaint)
 
-        // Footer Branding
+        // Footer Branding: Minimal, clean, and elegant
         val footerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = 0xFF78716C.toInt()
-            textSize = 17.5f
+            textSize = 18f
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
             textAlign = Paint.Align.CENTER
-            letterSpacing = 0.14f
+            letterSpacing = 0.16f
         }
         canvas.drawText(
-            "TRACKED WITH APEX • OFFLINE SENSOR FUSION",
+            "APEX • ATHLETIC PERFORMANCE TRACKER",
             CARD_WIDTH / 2f,
-            1264f,
+            1280f,
             footerPaint
-        )
-
-        val subFooterPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFA8A29E.toInt()
-            textSize = 13.5f
-            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
-            textAlign = Paint.Align.CENTER
-            letterSpacing = 0.08f
-        }
-        canvas.drawText(
-            "SUB-METER ACCURACY • EXTENDED KALMAN FILTER",
-            CARD_WIDTH / 2f,
-            1296f,
-            subFooterPaint
         )
     }
 
