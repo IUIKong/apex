@@ -36,16 +36,27 @@ class AppUpdateManager(
 
     /**
      * Checks GitHub API for the latest release and updates [_status].
+     * @param isManual When true (e.g. user tapped "Check Updates"), sets Checking/UpToDate/Error so user gets explicit feedback.
+     *                 When false (e.g. background on launch/resume), stays silent unless a new update is Available.
      */
-    suspend fun checkForUpdates(currentVersion: String): UpdateInfo? = withContext(Dispatchers.IO) {
-        _status.value = UpdateStatus.Checking
+    suspend fun checkForUpdates(
+        currentVersion: String,
+        isManual: Boolean = false
+    ): UpdateInfo? = withContext(Dispatchers.IO) {
+        if (isManual) {
+            _status.value = UpdateStatus.Checking
+        }
         try {
             val endpoint = "https://api.github.com/repos/$repoOwner/$repoName/releases/latest"
             val conn = openConnection(endpoint)
             val responseCode = conn.responseCode
 
             if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
-                _status.value = UpdateStatus.UpToDate(currentVersion)
+                if (isManual) {
+                    _status.value = UpdateStatus.UpToDate(currentVersion)
+                } else {
+                    _status.value = UpdateStatus.Idle
+                }
                 return@withContext null
             }
 
@@ -89,11 +100,19 @@ class AppUpdateManager(
                 _status.value = UpdateStatus.Available(info)
                 return@withContext info
             } else {
-                _status.value = UpdateStatus.UpToDate(currentVersion)
+                if (isManual) {
+                    _status.value = UpdateStatus.UpToDate(currentVersion)
+                } else {
+                    _status.value = UpdateStatus.Idle
+                }
                 return@withContext null
             }
         } catch (e: Exception) {
-            _status.value = UpdateStatus.Error(e.message ?: "Failed to check for updates")
+            if (isManual) {
+                _status.value = UpdateStatus.Error(e.message ?: "Failed to check for updates")
+            } else {
+                _status.value = UpdateStatus.Idle
+            }
             return@withContext null
         }
     }

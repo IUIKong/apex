@@ -1,6 +1,7 @@
 package com.apex.tracker
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -113,7 +114,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val liveState by viewModel.liveHudState.collectAsStateWithLifecycle()
-            var showSplash by remember { mutableStateOf(true) }
+            val context = LocalContext.current
+            var showSplash by remember { mutableStateOf(shouldShowIntro(context)) }
 
             ApexTheme(isDark = liveState.isDarkTheme) {
                 AnimatedContent(
@@ -126,7 +128,10 @@ class MainActivity : ComponentActivity() {
                 ) { isSplash ->
                     if (isSplash) {
                         ApexSplashIntroScreen(
-                            onFinish = { showSplash = false }
+                            onFinish = {
+                                markIntroShown(context)
+                                showSplash = false
+                            }
                         )
                     } else {
                         MainAppContent(
@@ -173,6 +178,32 @@ class MainActivity : ComponentActivity() {
             permissionLauncher.launch(missing.toTypedArray())
         }
     }
+
+    companion object {
+        private const val PREFS_NAME = "apex_preferences"
+        private const val KEY_LAST_INTRO_SHOWN_MS = "key_last_intro_shown_ms"
+        // 7 days in milliseconds: 7 * 24 * 60 * 60 * 1000 = 604,800,000 ms
+        const val INTRO_INTERVAL_MS = 7L * 24 * 60 * 60 * 1000L
+
+        /**
+         * Checks if the intro animation should run.
+         * Plays on the very first launch, and thereafter only if 7 or more days have elapsed.
+         */
+        fun shouldShowIntro(context: Context): Boolean {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val lastShown = prefs.getLong(KEY_LAST_INTRO_SHOWN_MS, 0L)
+            val now = System.currentTimeMillis()
+            return lastShown == 0L || (now - lastShown) >= INTRO_INTERVAL_MS
+        }
+
+        /**
+         * Records that the intro animation was completed or skipped.
+         */
+        fun markIntroShown(context: Context) {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit().putLong(KEY_LAST_INTRO_SHOWN_MS, System.currentTimeMillis()).apply()
+        }
+    }
 }
 
 @Composable
@@ -190,9 +221,9 @@ fun MainAppContent(
     val updateManager = remember { AppUpdateManager() }
     val updateStatus by updateManager.status.collectAsStateWithLifecycle()
 
-    // Autonomous background check for updates on launch
+    // Autonomous background check for updates on launch (silent mode, prompts only if available)
     LaunchedEffect(Unit) {
-        updateManager.checkForUpdates(BuildConfig.VERSION_NAME)
+        updateManager.checkForUpdates(BuildConfig.VERSION_NAME, isManual = false)
     }
 
     // Intercept hardware Back button when reviewing a workout summary
@@ -288,7 +319,7 @@ fun MainAppContent(
                                 },
                                 onCheckForUpdates = {
                                     coroutineScope.launch {
-                                        updateManager.checkForUpdates(BuildConfig.VERSION_NAME)
+                                        updateManager.checkForUpdates(BuildConfig.VERSION_NAME, isManual = true)
                                     }
                                 },
                                 updateStatus = updateStatus
